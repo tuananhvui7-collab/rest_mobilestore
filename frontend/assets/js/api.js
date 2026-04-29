@@ -1,5 +1,5 @@
 /* ===== PhoneShop API Client ===== */
-const API = ''; // Same origin — frontend served by Spring Boot on :8080
+const API = '';
 
 const api = {
   async request(method, path, body, isForm = false) {
@@ -78,5 +78,33 @@ function updateHeader() {
   } else {
     loginBtn.classList.remove('hidden');
     if (userArea) userArea.classList.add('hidden');
+  }
+}
+
+/* UI Interactions */
+function toggleMenu() {
+  const nav = document.querySelector('.desktop-nav');
+  if (nav) {
+    if (nav.style.display === 'none' || !nav.style.display) {
+      nav.style.display = 'flex';
+      nav.style.flexDirection = 'column';
+      nav.style.position = 'absolute';
+      nav.style.top = 'var(--header-h)';
+      nav.style.left = '0';
+      nav.style.width = '100%';
+      nav.style.background = 'var(--bg-card)';
+      nav.style.padding = '16px';
+      nav.style.boxShadow = 'var(--shadow-md)';
+      nav.style.zIndex = '100';
+    } else {
+      nav.style.display = 'none';
+    }
+  }
+}
+
+function toggleFilter() {
+  const sidebar = document.querySelector('.filter-sidebar');
+  if (sidebar) {
+    sidebar.classList.toggle('desktop-only');
   }
 }
