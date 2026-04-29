@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+  <title>Chi tiết đơn hàng — PhoneShop</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    .detail-section{background:var(--bg-card);border:1px solid var(--border-light);border-radius:var(--radius-lg);padding:16px;margin-bottom:12px}
+    .detail-section h4{margin-bottom:12px;display:flex;align-items:center;gap:8px}
+    .detail-section h4 i{color:var(--accent)}
+    .tracking-step{display:flex;gap:12px;padding:8px 0}
+    .tracking-dot{width:12px;height:12px;border-radius:50%;background:var(--border);flex-shrink:0;margin-top:4px}
+    .tracking-dot.active{background:var(--accent)}
+    .tracking-line{width:2px;background:var(--border-light);margin:0 5px}
+    @media(min-width:768px){.detail-layout{display:flex;gap:24px;max-width:900px;margin:0 auto;padding:16px 32px}.detail-left{flex:3}.detail-right{flex:2}}
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="flex items-center gap-12"><button class="header-icon" onclick="history.back()"><i class="fas fa-arrow-left"></i></button><h3>Chi tiết đơn hàng</h3></div>
+  </header>
+  <main class="page">
+    <div class="detail-layout" style="padding:0 16px" id="content"><div class="spinner mt-24"></div></div>
+  </main>
+  <nav class="bottom-nav">
+    <a href="index.html" class="bottom-nav-item"><i class="fas fa-home"></i><span>Trang chủ</span></a>
+    <a href="products.html" class="bottom-nav-item"><i class="fas fa-th-large"></i><span>Sản phẩm</span></a>
+    <a href="cart.html" class="bottom-nav-item"><i class="fas fa-shopping-bag"></i><span>Giỏ hàng</span></a>
+    <a href="orders.html" class="bottom-nav-item active"><i class="fas fa-box"></i><span>Đơn hàng</span></a>
+    <a href="profile.html" class="bottom-nav-item"><i class="fas fa-user"></i><span>Tài khoản</span></a>
+  </nav>
+  <script src="assets/js/api.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', load);
+    async function load() {
+      const id = getParam('id');
+      if (!id) { navigate('orders.html'); return; }
+      try {
+        const res = await api.get(`/api/orders/${id}`);
+        if (res.status === 200 && res.data) render(res.data);
+        else document.getElementById('content').innerHTML = '<div class="empty-state"><h3>Không tìm thấy đơn hàng</h3></div>';
+      } catch { document.getElementById('content').innerHTML = '<div class="empty-state"><h3>Lỗi kết nối</h3></div>'; }
+    }
+
+    function render(o) {
+      const statusMap = {PENDING:'status-pending',CONFIRMED:'status-confirmed',SHIPPING:'status-shipping',DELIVERED:'status-delivered',CANCELLED:'status-cancelled'};
+      const labelMap = {PENDING:'Chờ xác nhận',CONFIRMED:'Đã xác nhận',SHIPPING:'Đang giao',DELIVERED:'Đã giao',CANCELLED:'Đã hủy'};
+      const steps = ['PENDING','CONFIRMED','SHIPPING','DELIVERED'];
+      const currentIdx = steps.indexOf(o.status);
+
+      document.getElementById('content').innerHTML = `
+        <div class="detail-left">
+          <div class="detail-section">
+            <div class="flex justify-between items-center">
+              <h4><i class="fas fa-receipt"></i> Đơn #${o.orderCode || o.orderId}</h4>
+              <span class="order-status ${statusMap[o.status]}">${labelMap[o.status] || o.status}</span>
+            </div>
+            <p class="text-sm text-muted">Ngày đặt: ${o.createdAt ? new Date(o.createdAt).toLocaleDateString('vi-VN') : '—'}</p>
+          </div>
+
+          <div class="detail-section">
+            <h4><i class="fas fa-box"></i> Sản phẩm</h4>
+            ${(o.items || []).map(i => `
+              <div class="flex gap-12 mb-12" style="padding:8px 0;border-bottom:1px solid var(--border-light)">
+                <img src="${i.imageUrl || 'https://placehold.co/60x60/f5f5f7/999?text=SP'}" style="width:56px;height:56px;border-radius:8px;object-fit:cover" onerror="this.src='https://placehold.co/60x60/f5f5f7/999?text=SP'">
+                <div class="flex-1"><div class="fw-500 text-sm">${i.productName || 'SP'}</div><div class="text-xs text-muted">${i.quantity} x ${fmt(i.unitPrice || i.price)}</div></div>
+                <div class="fw-600 text-sm">${fmt((i.unitPrice || i.price) * i.quantity)}</div>
+              </div>`).join('')}
+            <div class="flex justify-between mt-8"><span class="fw-700">Tổng cộng</span><span class="fw-700 text-danger" style="font-size:1.125rem">${fmt(o.totalAmount)}</span></div>
+          </div>
+
+          <div class="detail-section">
+            <h4><i class="fas fa-map-marker-alt"></i> Địa chỉ giao hàng</h4>
+            <p class="text-sm">${o.shippingName || '—'}</p>
+            <p class="text-sm text-muted">${o.shippingPhone || ''}</p>
+            <p class="text-sm text-muted">${o.shippingAddress || ''}</p>
+          </div>
+        </div>
+
+        <div class="detail-right">
+          <div class="detail-section">
+            <h4><i class="fas fa-truck"></i> Theo dõi vận chuyển</h4>
+            ${steps.map((s, i) => `<div class="tracking-step"><div class="tracking-dot ${i <= currentIdx ? 'active' : ''}"></div><div><div class="text-sm fw-500 ${i <= currentIdx ? '' : 'text-muted'}">${labelMap[s]}</div></div></div>`).join('')}
+          </div>
+
+          <div class="detail-section">
+            <h4><i class="fas fa-credit-card"></i> Thanh toán</h4>
+            <p class="text-sm">${o.paymentMethod || 'COD'}</p>
+          </div>
+        </div>`;
+    }
+  </script>
+</body>
+</html>

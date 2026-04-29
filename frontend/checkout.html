@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+  <title>Thanh toán — PhoneShop</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    .checkout-section{background:var(--bg-card);border:1px solid var(--border-light);border-radius:var(--radius-lg);padding:16px;margin-bottom:12px}
+    .checkout-section h4{margin-bottom:12px}
+    .radio-option{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border-light);cursor:pointer;font-size:0.875rem}
+    .radio-option:last-child{border-bottom:none}
+    .radio-option input[type=radio]{accent-color:var(--accent);width:18px;height:18px}
+    .order-item{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--border-light);font-size:0.8125rem}
+    .order-item:last-child{border-bottom:none}
+    .order-item img{width:48px;height:48px;border-radius:var(--radius-sm);object-fit:cover;background:var(--bg)}
+    @media(min-width:768px){.checkout-layout{display:flex;gap:24px;max-width:900px;margin:0 auto;padding:16px 32px}.checkout-form{flex:3}.checkout-aside{flex:2}}
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="flex items-center gap-12">
+      <button class="header-icon" onclick="history.back()"><i class="fas fa-arrow-left"></i></button>
+      <h3>Thanh toán</h3>
+    </div>
+  </header>
+
+  <main class="page">
+    <div class="steps">
+      <div class="step done"><div class="step-circle"><i class="fas fa-check" style="font-size:0.6rem"></i></div></div>
+      <div class="step-line" style="background:var(--accent)"></div>
+      <div class="step active"><div class="step-circle">2</div></div>
+      <div class="step-line"></div>
+      <div class="step"><div class="step-circle">3</div></div>
+    </div>
+    <div class="flex justify-center gap-24 mb-16" style="margin-top:-4px">
+      <span class="text-xs text-muted">Giỏ hàng</span>
+      <span class="text-xs fw-600 text-accent">Thanh toán</span>
+      <span class="text-xs text-muted">Hoàn tất</span>
+    </div>
+
+    <form id="checkoutForm" class="checkout-layout" style="padding:0 16px">
+      <div class="checkout-form">
+        <div class="checkout-section">
+          <h4><i class="fas fa-user" style="color:var(--accent)"></i> Thông tin khách hàng</h4>
+          <div class="flex-col gap-12">
+            <div class="form-group"><label class="form-label">Họ và tên</label><input type="text" id="name" class="form-input" required></div>
+            <div class="form-group"><label class="form-label">Số điện thoại</label><input type="tel" id="phone" class="form-input" required></div>
+            <div class="form-group"><label class="form-label">Email</label><input type="email" id="email" class="form-input"></div>
+          </div>
+        </div>
+        <div class="checkout-section">
+          <h4><i class="fas fa-map-marker-alt" style="color:var(--accent)"></i> Địa chỉ giao hàng</h4>
+          <div class="flex-col gap-12">
+            <div class="form-group"><label class="form-label">Địa chỉ chi tiết</label><input type="text" id="address" class="form-input" placeholder="Số nhà, tên đường, phường/xã..." required></div>
+          </div>
+        </div>
+        <div class="checkout-section">
+          <h4><i class="fas fa-truck" style="color:var(--accent)"></i> Phương thức vận chuyển</h4>
+          <label class="radio-option"><input type="radio" name="shipping" value="standard" checked> Giao hàng tiêu chuẩn (2-3 ngày)</label>
+          <label class="radio-option"><input type="radio" name="shipping" value="express"> Giao hàng nhanh (1 ngày) <span class="text-xs text-danger" style="margin-left:auto">+30.000₫</span></label>
+        </div>
+        <div class="checkout-section">
+          <h4><i class="fas fa-credit-card" style="color:var(--accent)"></i> Phương thức thanh toán</h4>
+          <label class="radio-option"><input type="radio" name="payment" value="COD" checked> Thanh toán khi nhận hàng (COD)</label>
+          <label class="radio-option"><input type="radio" name="payment" value="VN_PAY"> Thanh toán VNPAY <i class="fas fa-shield-alt text-success" style="margin-left:auto"></i></label>
+        </div>
+      </div>
+      <div class="checkout-aside">
+        <div class="checkout-section" style="position:sticky;top:80px">
+          <h4>Tóm tắt đơn hàng</h4>
+          <div id="orderSummary"><div class="spinner"></div></div>
+          <div style="border-top:1px solid var(--border-light);margin:12px 0"></div>
+          <div class="flex justify-between mb-8"><span class="text-sm text-muted">Tạm tính</span><span class="fw-600" id="sumSubtotal">0₫</span></div>
+          <div class="flex justify-between mb-8"><span class="text-sm text-muted">Phí vận chuyển</span><span class="fw-600" id="sumShipping">0₫</span></div>
+          <div class="flex justify-between"><span class="fw-700">Tổng cộng</span><span class="fw-700 text-danger" style="font-size:1.125rem" id="sumTotal">0₫</span></div>
+          <button type="submit" class="btn btn-primary btn-block btn-lg mt-16" id="placeBtn">
+            <i class="fas fa-lock"></i> Đặt hàng
+          </button>
+        </div>
+      </div>
+    </form>
+  </main>
+
+  <nav class="bottom-nav">
+    <a href="index.html" class="bottom-nav-item"><i class="fas fa-home"></i><span>Trang chủ</span></a>
+    <a href="products.html" class="bottom-nav-item"><i class="fas fa-th-large"></i><span>Sản phẩm</span></a>
+    <a href="cart.html" class="bottom-nav-item"><i class="fas fa-shopping-bag"></i><span>Giỏ hàng</span></a>
+    <a href="orders.html" class="bottom-nav-item"><i class="fas fa-box"></i><span>Đơn hàng</span></a>
+    <a href="profile.html" class="bottom-nav-item"><i class="fas fa-user"></i><span>Tài khoản</span></a>
+  </nav>
+
+  <script src="assets/js/api.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', loadCheckout);
+    async function loadCheckout() {
+      try {
+        const res = await api.get('/api/orders/checkout-info');
+        if (res.status === 200 && res.data) {
+          const d = res.data;
+          if (d.customer) {
+            document.getElementById('name').value = d.customer.fullName || '';
+            document.getElementById('phone').value = d.customer.phone || '';
+            document.getElementById('email').value = d.customer.email || '';
+          }
+          if (d.defaultAddress) document.getElementById('address').value = d.defaultAddress.fullAddress || '';
+          if (d.cartItems) renderSummary(d.cartItems);
+        }
+      } catch { document.getElementById('orderSummary').innerHTML = '<p class="text-sm text-muted">Đăng nhập để thanh toán</p>'; }
+    }
+
+    function renderSummary(items) {
+      const c = document.getElementById('orderSummary');
+      let subtotal = 0;
+      c.innerHTML = items.map(i => {
+        subtotal += (i.unitPrice || i.price || 0) * i.quantity;
+        return `<div class="order-item">
+          <img src="${i.imageUrl || 'https://placehold.co/48x48/f5f5f7/999?text=SP'}" onerror="this.src='https://placehold.co/48x48/f5f5f7/999?text=SP'">
+          <div class="flex-1"><div>${i.productName || 'SP'}</div><div class="text-xs text-muted">${i.quantity} x ${fmt(i.unitPrice || i.price)}</div></div>
+          <div class="fw-600">${fmt((i.unitPrice || i.price) * i.quantity)}</div>
+        </div>`;
+      }).join('');
+      document.getElementById('sumSubtotal').textContent = fmt(subtotal);
+      document.getElementById('sumTotal').textContent = fmt(subtotal);
+    }
+
+    document.getElementById('checkoutForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('placeBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<div class="spinner" style="width:20px;height:20px;border-width:2px"></div>';
+      const payment = document.querySelector('input[name=payment]:checked').value;
+      try {
+        const res = await api.post('/api/orders/place', {
+          shippingName: document.getElementById('name').value,
+          shippingPhone: document.getElementById('phone').value,
+          shippingAddress: document.getElementById('address').value,
+          paymentMethod: payment
+        });
+        if (res.status === 200) {
+          showToast('Đặt hàng thành công!', 'success');
+          setTimeout(() => navigate('orders.html'), 1000);
+        } else {
+          showToast(res.message || 'Đặt hàng thất bại', 'error');
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-lock"></i> Đặt hàng';
+        }
+      } catch {
+        showToast('Lỗi kết nối', 'error');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-lock"></i> Đặt hàng';
+      }
+    });
+  </script>
+</body>
+</html>

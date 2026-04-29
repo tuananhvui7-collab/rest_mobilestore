@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+  <title>Sản phẩm — PhoneShop</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    .search-bar{display:flex;gap:8px;padding:12px 16px;position:sticky;top:var(--header-h);background:var(--bg);z-index:10}
+    .search-bar input{flex:1}
+    .filter-row{display:flex;gap:8px;padding:0 16px;overflow-x:auto;scrollbar-width:none}
+    .filter-row::-webkit-scrollbar{display:none}
+    @media(min-width:768px){
+      .products-layout{display:flex;gap:24px;padding:0 32px}
+      .filter-sidebar{width:240px;flex-shrink:0;position:sticky;top:calc(64px + 16px);height:fit-content;background:var(--bg-card);border-radius:var(--radius-lg);padding:20px;border:1px solid var(--border-light)}
+      .filter-sidebar .form-group{margin-bottom:16px}
+      .search-bar{padding:16px 32px}
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="flex items-center gap-12">
+      <a href="index.html" class="header-icon" aria-label="Quay lại"><i class="fas fa-arrow-left"></i></a>
+      <a href="index.html" class="header-logo">Phone<span>Shop</span></a>
+    </div>
+    <div class="header-actions">
+      <a href="cart.html" class="header-icon"><i class="fas fa-shopping-bag"></i><span class="badge" id="cartBadge">0</span></a>
+      <a href="profile.html" class="header-icon"><i class="fas fa-user"></i></a>
+    </div>
+  </header>
+
+  <main class="page">
+    <div class="search-bar">
+      <input type="text" id="searchInput" class="form-input" placeholder="Tìm kiếm điện thoại..." oninput="debounceSearch()">
+      <button class="btn btn-primary btn-sm mobile-only" onclick="toggleFilter()"><i class="fas fa-sliders-h"></i></button>
+    </div>
+
+    <div class="filter-row mobile-only" id="brandFilter">
+      <div class="chip active" onclick="filterBrand(this,'')">Tất cả</div>
+      <div class="chip" onclick="filterBrand(this,'Apple')">Apple</div>
+      <div class="chip" onclick="filterBrand(this,'Samsung')">Samsung</div>
+      <div class="chip" onclick="filterBrand(this,'Oppo')">Oppo</div>
+      <div class="chip" onclick="filterBrand(this,'Xiaomi')">Xiaomi</div>
+    </div>
+
+    <div class="products-layout">
+      <aside class="filter-sidebar desktop-only">
+        <h4 class="mb-16">Bộ lọc</h4>
+        <div class="form-group">
+          <label class="form-label">Hãng</label>
+          <select class="form-input" id="brandSelect" onchange="loadProducts()">
+            <option value="">Tất cả</option>
+            <option value="Apple">Apple</option>
+            <option value="Samsung">Samsung</option>
+            <option value="Oppo">Oppo</option>
+            <option value="Xiaomi">Xiaomi</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Sắp xếp</label>
+          <select class="form-input" id="sortSelect" onchange="loadProducts()">
+            <option value="">Mới nhất</option>
+            <option value="price_asc">Giá thấp → cao</option>
+            <option value="price_desc">Giá cao → thấp</option>
+          </select>
+        </div>
+      </aside>
+
+      <div style="flex:1">
+        <div class="section" style="padding-top:8px">
+          <div class="product-grid" id="productsGrid">
+            <div style="grid-column:1/-1"><div class="spinner"></div></div>
+          </div>
+          <div id="pagination" class="flex justify-center gap-8 mt-20"></div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="footer-bottom">© 2026 PhoneShop. All rights reserved.</div>
+    </footer>
+  </main>
+
+  <nav class="bottom-nav">
+    <a href="index.html" class="bottom-nav-item"><i class="fas fa-home"></i><span>Trang chủ</span></a>
+    <a href="products.html" class="bottom-nav-item active"><i class="fas fa-th-large"></i><span>Sản phẩm</span></a>
+    <a href="cart.html" class="bottom-nav-item"><i class="fas fa-shopping-bag"></i><span>Giỏ hàng</span></a>
+    <a href="orders.html" class="bottom-nav-item"><i class="fas fa-box"></i><span>Đơn hàng</span></a>
+    <a href="profile.html" class="bottom-nav-item"><i class="fas fa-user"></i><span>Tài khoản</span></a>
+  </nav>
+
+  <script src="assets/js/api.js"></script>
+  <script>
+    let currentPage = 0, currentBrand = '', searchTimer;
+    document.addEventListener('DOMContentLoaded', () => {
+      currentBrand = getParam('brand') || '';
+      if (currentBrand) {
+        document.querySelectorAll('.chip').forEach(c => {
+          c.classList.toggle('active', c.textContent.trim() === currentBrand || (!currentBrand && c.textContent.trim() === 'Tất cả'));
+        });
+      }
+      loadProducts();
+    });
+
+    function debounceSearch() { clearTimeout(searchTimer); searchTimer = setTimeout(() => { currentPage = 0; loadProducts(); }, 400); }
+    function filterBrand(el, brand) {
+      document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+      currentBrand = brand;
+      currentPage = 0;
+      loadProducts();
+    }
+
+    async function loadProducts() {
+      const grid = document.getElementById('productsGrid');
+      grid.innerHTML = '<div style="grid-column:1/-1"><div class="spinner"></div></div>';
+      const keyword = document.getElementById('searchInput').value;
+      const brand = currentBrand || (document.getElementById('brandSelect') ? document.getElementById('brandSelect').value : '');
+      let url = `/api/products?page=${currentPage}&size=8`;
+      if (keyword) url += `&keyword=${encodeURIComponent(keyword)}`;
+      if (brand) url += `&brand=${encodeURIComponent(brand)}`;
+      try {
+        const res = await api.get(url);
+        if (res.status === 200 && res.data && res.data.content) {
+          renderProducts(res.data.content, grid);
+          renderPagination(res.data);
+        } else {
+          grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><i class="fas fa-search"></i><h3>Không tìm thấy sản phẩm</h3></div>';
+        }
+      } catch {
+        grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><i class="fas fa-exclamation-triangle"></i><h3>Lỗi kết nối</h3><p>Backend chưa chạy.</p></div>';
+      }
+    }
+
+    function renderProducts(products, c) {
+      if (!products.length) { c.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><i class="fas fa-box-open"></i><h3>Không có sản phẩm</h3></div>'; return; }
+      c.innerHTML = products.map(p => {
+        const img = (p.images && p.images.length > 0) ? p.images[0].imageUrl : 'https://placehold.co/400x400/f5f5f7/999?text=No+Image';
+        return `
+          <div class="product-card" onclick="navigate('product-detail.html',{id:${p.productId}})">
+            <img src="${img}" alt="${p.name}" class="product-card-img" onerror="this.src='https://placehold.co/400x400/f5f5f7/999?text=No+Image'">
+            <div class="product-card-body">
+              <div class="product-card-name">${p.name}</div>
+              <div class="product-card-price">${fmt(p.price)}</div>
+              ${p.totalStock > 0 ? '<div class="text-xs text-success mt-4"><i class="fas fa-check-circle"></i> Còn hàng</div>' : '<div class="text-xs text-danger mt-4">Hết hàng</div>'}
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    function renderPagination(data) {
+      const c = document.getElementById('pagination');
+      if (!data || data.totalPages <= 1) { c.innerHTML = ''; return; }
+      let html = '';
+      if (data.number > 0) html += `<button class="btn btn-outline btn-sm" onclick="goPage(${data.number - 1})">‹</button>`;
+      for (let i = 0; i < data.totalPages; i++) {
+        html += `<button class="btn btn-sm ${i === data.number ? 'btn-primary' : 'btn-outline'}" onclick="goPage(${i})">${i + 1}</button>`;
+      }
+      if (data.number < data.totalPages - 1) html += `<button class="btn btn-outline btn-sm" onclick="goPage(${data.number + 1})">›</button>`;
+      c.innerHTML = html;
+    }
+    function goPage(p) { currentPage = p; loadProducts(); window.scrollTo(0, 0); }
+  </script>
+</body>
+</html>

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+  <title>Quản lý nhân viên — PhoneShop Admin</title>
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    .admin-layout{display:flex;min-height:100vh}.sidebar{width:240px;background:var(--bg-card);border-right:1px solid var(--border-light);padding:20px 0;position:fixed;top:0;bottom:0;overflow-y:auto;z-index:50}.sidebar-logo{padding:0 20px 20px;font-size:1.125rem;font-weight:800;border-bottom:1px solid var(--border-light);margin-bottom:12px}.sidebar-logo span{color:var(--accent)}.sidebar-item{display:flex;align-items:center;gap:10px;padding:10px 20px;color:var(--text-secondary);font-size:0.875rem;font-weight:500;cursor:pointer;transition:all var(--transition)}.sidebar-item:hover,.sidebar-item.active{background:var(--accent-light);color:var(--accent)}.sidebar-item i{width:20px;text-align:center}.admin-main{flex:1;margin-left:240px;padding:24px}
+    .emp-count{background:var(--accent-light);color:var(--accent);padding:16px 24px;border-radius:var(--radius-lg);margin-bottom:16px;text-align:center}
+    .emp-count .num{font-size:2rem;font-weight:800}
+    @media(max-width:767px){.sidebar{display:none;width:100%;position:fixed;z-index:200;top:var(--header-h);bottom:0}.sidebar.open{display:block}.admin-main{margin-left:0;padding:16px;padding-top:calc(var(--header-h) + 16px)}.admin-header{display:flex!important}}
+    @media(min-width:768px){.admin-header{display:none!important}}
+  </style>
+</head>
+<body>
+  <header class="header admin-header"><div class="flex items-center gap-12"><button class="header-icon" onclick="document.querySelector('.sidebar').classList.toggle('open')"><i class="fas fa-bars"></i></button><span class="header-logo">Phone<span>Shop</span></span></div><span class="text-sm fw-600">Nhân viên</span></header>
+  <div class="admin-layout">
+    <aside class="sidebar"><div class="sidebar-logo">Phone<span>Shop</span></div><a href="dashboard.html" class="sidebar-item"><i class="fas fa-chart-pie"></i> Dashboard</a><a href="products.html" class="sidebar-item"><i class="fas fa-box"></i> Sản phẩm</a><a href="orders.html" class="sidebar-item"><i class="fas fa-shopping-cart"></i> Đơn hàng</a><a href="employees.html" class="sidebar-item active"><i class="fas fa-users"></i> Nhân viên</a><a href="reports.html" class="sidebar-item"><i class="fas fa-chart-bar"></i> Báo cáo</a></aside>
+    <main class="admin-main">
+      <h1 class="mb-16">Quản lý nhân viên</h1>
+      <div class="emp-count"><div class="text-sm text-muted">Tổng nhân sự</div><div class="num" id="empCount">—</div></div>
+      <div class="flex justify-between items-center mb-16">
+        <input type="text" class="form-input" placeholder="Tìm kiếm..." style="max-width:240px" id="search" oninput="renderTable()">
+        <button class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Thêm nhân viên</button>
+      </div>
+      <div class="card"><div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>ID</th><th>Họ tên</th><th>Email</th><th>Vai trò</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+          <tbody id="empBody"><tr><td colspan="6" style="text-align:center;padding:32px"><div class="spinner"></div></td></tr></tbody>
+        </table>
+      </div></div>
+    </main>
+  </div>
+  <script src="../assets/js/api.js"></script>
+  <script>
+    let employees = [];
+    document.addEventListener('DOMContentLoaded', loadEmployees);
+    async function loadEmployees() {
+      try {
+        const res = await api.get('/api/admin/employees');
+        if (res.status === 200) { employees = res.data || []; document.getElementById('empCount').textContent = employees.length; renderTable(); }
+      } catch { document.getElementById('empBody').innerHTML = '<tr><td colspan="6" class="text-center text-muted">Lỗi tải</td></tr>'; }
+    }
+    function renderTable() {
+      const kw = document.getElementById('search').value.toLowerCase();
+      const filtered = kw ? employees.filter(e => ((e.fullName || '') + (e.email || '')).toLowerCase().includes(kw)) : employees;
+      const tbody = document.getElementById('empBody');
+      if (!filtered.length) { tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted" style="padding:32px">Không có nhân viên</td></tr>'; return; }
+      tbody.innerHTML = filtered.map(e => `<tr>
+        <td class="fw-600">${e.employeeId || e.id || ''}</td>
+        <td>${e.fullName || e.name || '—'}</td>
+        <td class="text-sm">${e.email || '—'}</td>
+        <td><span class="chip btn-sm" style="font-size:0.6875rem">${e.role || 'Staff'}</span></td>
+        <td><span class="order-status ${e.active !== false ? 'status-confirmed' : 'status-cancelled'}">${e.active !== false ? 'Active' : 'Inactive'}</span></td>
+        <td><button class="btn btn-outline btn-sm" onclick="toggleEmp(${e.employeeId || e.id},${e.active !== false})">${e.active !== false ? 'Khóa' : 'Kích hoạt'}</button></td>
+      </tr>`).join('');
+    }
+    async function toggleEmp(id, isActive) {
+      const action = isActive ? 'deactivate' : 'activate';
+      try { await api.post(`/api/admin/employees/${id}/${action}`); loadEmployees(); showToast('Đã cập nhật!', 'success'); } catch { showToast('Lỗi', 'error'); }
+    }
+  </script>
+</body>
+</html>

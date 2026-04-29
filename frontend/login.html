@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+  <title>Đăng nhập — PhoneShop</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    .auth-page{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px;background:var(--bg)}
+    .auth-card{width:100%;max-width:400px;background:var(--bg-card);border-radius:var(--radius-xl);padding:32px 24px;box-shadow:var(--shadow-lg)}
+    .auth-logo{text-align:center;margin-bottom:24px}
+    .auth-logo h1{font-size:1.5rem}
+    .auth-logo p{color:var(--text-secondary);font-size:0.875rem;margin-top:4px}
+    .auth-divider{text-align:center;color:var(--text-muted);font-size:0.8125rem;margin:20px 0;position:relative}
+    .auth-divider::before,.auth-divider::after{content:'';position:absolute;top:50%;width:calc(50% - 30px);height:1px;background:var(--border-light)}
+    .auth-divider::before{left:0}
+    .auth-divider::after{right:0}
+  </style>
+</head>
+<body>
+  <div class="auth-page">
+    <div class="auth-card">
+      <div class="auth-logo">
+        <h1>Phone<span style="color:var(--accent)">Shop</span></h1>
+        <p>Đăng nhập để tiếp tục</p>
+      </div>
+      <form id="loginForm" class="flex-col gap-16">
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" id="email" class="form-input" placeholder="you@example.com" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Mật khẩu</label>
+          <input type="password" id="password" class="form-input" placeholder="••••••••" required>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block btn-lg">Đăng nhập</button>
+      </form>
+      <div class="auth-divider">hoặc</div>
+      <a href="register.html" class="btn btn-outline btn-block">Tạo tài khoản mới</a>
+      <div class="text-center mt-16">
+        <a href="index.html" class="text-sm" style="color:var(--text-secondary)"><i class="fas fa-arrow-left"></i> Về trang chủ</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="assets/js/api.js"></script>
+  <script>
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const btn = e.target.querySelector('button[type="submit"]');
+      btn.disabled = true;
+      btn.innerHTML = '<div class="spinner" style="width:20px;height:20px;border-width:2px"></div>';
+      try {
+        const res = await auth.login(email, password);
+        if (res.status === 200) {
+          auth.setUser(res.data);
+          showToast('Đăng nhập thành công!', 'success');
+          const roles = res.data.roles || '';
+          if (roles.includes('MANAGER')) {
+            setTimeout(() => navigate('admin/dashboard.html'), 500);
+          } else if (roles.includes('EMPLOYEE')) {
+            setTimeout(() => navigate('admin/orders.html'), 500);
+          } else {
+            setTimeout(() => navigate('index.html'), 500);
+          }
+        } else {
+          showToast(res.message || 'Sai email hoặc mật khẩu', 'error');
+          btn.disabled = false;
+          btn.textContent = 'Đăng nhập';
+        }
+      } catch {
+        showToast('Lỗi kết nối server', 'error');
+        btn.disabled = false;
+        btn.textContent = 'Đăng nhập';
+      }
+    });
+  </script>
+</body>
+</html>

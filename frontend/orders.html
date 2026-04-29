@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+  <title>Đơn hàng — PhoneShop</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+  <header class="header">
+    <div class="flex items-center gap-12">
+      <button class="header-icon" onclick="history.back()"><i class="fas fa-arrow-left"></i></button>
+      <h3>Đơn hàng của tôi</h3>
+    </div>
+  </header>
+
+  <main class="page">
+    <div class="tabs" style="padding:0 16px">
+      <button class="tab active" onclick="filterTab(this,'')">Tất cả</button>
+      <button class="tab" onclick="filterTab(this,'PENDING')">Chờ xác nhận</button>
+      <button class="tab" onclick="filterTab(this,'CONFIRMED')">Đã xác nhận</button>
+      <button class="tab" onclick="filterTab(this,'SHIPPING')">Đang giao</button>
+      <button class="tab" onclick="filterTab(this,'DELIVERED')">Đã giao</button>
+      <button class="tab" onclick="filterTab(this,'CANCELLED')">Đã hủy</button>
+    </div>
+    <div class="section" id="ordersList"><div class="spinner mt-24"></div></div>
+  </main>
+
+  <nav class="bottom-nav">
+    <a href="index.html" class="bottom-nav-item"><i class="fas fa-home"></i><span>Trang chủ</span></a>
+    <a href="products.html" class="bottom-nav-item"><i class="fas fa-th-large"></i><span>Sản phẩm</span></a>
+    <a href="cart.html" class="bottom-nav-item"><i class="fas fa-shopping-bag"></i><span>Giỏ hàng</span></a>
+    <a href="orders.html" class="bottom-nav-item active"><i class="fas fa-box"></i><span>Đơn hàng</span></a>
+    <a href="profile.html" class="bottom-nav-item"><i class="fas fa-user"></i><span>Tài khoản</span></a>
+  </nav>
+
+  <script src="assets/js/api.js"></script>
+  <script>
+    let allOrders = [], currentFilter = '';
+    document.addEventListener('DOMContentLoaded', loadOrders);
+
+    async function loadOrders() {
+      try {
+        const res = await api.get('/api/orders');
+        if (res.status === 200 && res.data) {
+          allOrders = Array.isArray(res.data) ? res.data : (res.data.content || []);
+          renderOrders();
+        } else { showEmpty(); }
+      } catch { showEmpty('Đăng nhập để xem đơn hàng'); }
+    }
+
+    function filterTab(el, status) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      el.classList.add('active');
+      currentFilter = status;
+      renderOrders();
+    }
+
+    function renderOrders() {
+      const c = document.getElementById('ordersList');
+      const filtered = currentFilter ? allOrders.filter(o => o.status === currentFilter) : allOrders;
+      if (!filtered.length) { showEmpty(); return; }
+      c.innerHTML = filtered.map(o => {
+        const statusMap = {PENDING:'status-pending',CONFIRMED:'status-confirmed',SHIPPING:'status-shipping',DELIVERED:'status-delivered',CANCELLED:'status-cancelled'};
+        const labelMap = {PENDING:'Chờ xác nhận',CONFIRMED:'Đã xác nhận',SHIPPING:'Đang giao',DELIVERED:'Đã giao',CANCELLED:'Đã hủy'};
+        return `<div class="order-card" onclick="navigate('order-detail.html',{id:${o.orderId}})" style="cursor:pointer">
+          <div class="order-header">
+            <div><span class="text-sm fw-600">#${o.orderCode || o.orderId}</span><span class="text-xs text-muted" style="margin-left:8px">${o.createdAt ? new Date(o.createdAt).toLocaleDateString('vi-VN') : ''}</span></div>
+            <span class="order-status ${statusMap[o.status] || ''}">${labelMap[o.status] || o.status}</span>
+          </div>
+          ${o.items ? o.items.slice(0,2).map(i => `<div class="text-sm">${i.productName || 'SP'} x${i.quantity}</div>`).join('') : ''}
+          <div class="flex justify-between items-center mt-8">
+            <span class="text-sm text-muted">${o.paymentMethod || ''}</span>
+            <span class="fw-700 text-danger">${fmt(o.totalAmount)}</span>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function showEmpty(msg) {
+      document.getElementById('ordersList').innerHTML = `<div class="empty-state"><i class="fas fa-box-open"></i><h3>${msg || 'Chưa có đơn hàng'}</h3>${!msg ? '<a href="products.html" class="btn btn-primary btn-sm mt-12">Mua sắm ngay</a>' : '<a href="login.html" class="btn btn-primary btn-sm mt-12">Đăng nhập</a>'}</div>`;
+    }
+  </script>
+</body>
+</html>

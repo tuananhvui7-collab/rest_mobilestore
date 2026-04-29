@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+  <title>Xử lý đơn hàng — PhoneShop Admin</title>
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    .admin-layout{display:flex;min-height:100vh}
+    .sidebar{width:240px;background:var(--bg-card);border-right:1px solid var(--border-light);padding:20px 0;position:fixed;top:0;bottom:0;overflow-y:auto;z-index:50}
+    .sidebar-logo{padding:0 20px 20px;font-size:1.125rem;font-weight:800;border-bottom:1px solid var(--border-light);margin-bottom:12px}
+    .sidebar-logo span{color:var(--accent)}
+    .sidebar-item{display:flex;align-items:center;gap:10px;padding:10px 20px;color:var(--text-secondary);font-size:0.875rem;font-weight:500;cursor:pointer;transition:all var(--transition)}
+    .sidebar-item:hover,.sidebar-item.active{background:var(--accent-light);color:var(--accent)}
+    .sidebar-item i{width:20px;text-align:center}
+    .admin-main{flex:1;margin-left:240px;padding:24px}
+    @media(max-width:767px){
+      .sidebar{display:none;width:100%;position:fixed;z-index:200;top:var(--header-h);bottom:0}
+      .sidebar.open{display:block}
+      .admin-main{margin-left:0;padding:16px;padding-top:calc(var(--header-h) + 16px)}
+      .admin-header{display:flex!important}
+    }
+    @media(min-width:768px){.admin-header{display:none!important}}
+  </style>
+</head>
+<body>
+  <header class="header admin-header">
+    <div class="flex items-center gap-12">
+      <button class="header-icon" onclick="document.querySelector('.sidebar').classList.toggle('open')"><i class="fas fa-bars"></i></button>
+      <span class="header-logo">Phone<span>Shop</span></span>
+    </div>
+    <span class="text-sm fw-600">Đơn hàng</span>
+  </header>
+
+  <div class="admin-layout">
+    <aside class="sidebar">
+      <div class="sidebar-logo">Phone<span>Shop</span></div>
+      <a href="dashboard.html" class="sidebar-item"><i class="fas fa-chart-pie"></i> Dashboard</a>
+      <a href="products.html" class="sidebar-item"><i class="fas fa-box"></i> Sản phẩm</a>
+      <a href="orders.html" class="sidebar-item active"><i class="fas fa-shopping-cart"></i> Đơn hàng</a>
+      <a href="employees.html" class="sidebar-item"><i class="fas fa-users"></i> Nhân viên</a>
+      <a href="reports.html" class="sidebar-item"><i class="fas fa-chart-bar"></i> Báo cáo</a>
+    </aside>
+
+    <main class="admin-main">
+      <h1 class="mb-16">Xử lý đơn hàng</h1>
+      <div class="tabs mb-16">
+        <button class="tab active" onclick="filterTab(this,'')">Tất cả</button>
+        <button class="tab" onclick="filterTab(this,'PENDING')">Chờ xử lý</button>
+        <button class="tab" onclick="filterTab(this,'CONFIRMED')">Đã xác nhận</button>
+        <button class="tab" onclick="filterTab(this,'SHIPPING')">Đang giao</button>
+        <button class="tab" onclick="filterTab(this,'DELIVERED')">Đã giao</button>
+        <button class="tab" onclick="filterTab(this,'CANCELLED')">Đã hủy</button>
+      </div>
+      <div class="card"><div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>Mã ĐH</th><th>Khách hàng</th><th>Sản phẩm</th><th>Tổng tiền</th><th>PT Thanh toán</th><th>Ngày</th><th>Thao tác</th></tr></thead>
+          <tbody id="ordersBody"><tr><td colspan="7" style="text-align:center;padding:32px"><div class="spinner"></div></td></tr></tbody>
+        </table>
+      </div></div>
+    </main>
+  </div>
+
+  <script src="../assets/js/api.js"></script>
+  <script>
+    let allOrders = [], currentFilter = '';
+    document.addEventListener('DOMContentLoaded', loadOrders);
+
+    async function loadOrders() {
+      try {
+        const res = await api.get('/api/staff/orders');
+        if (res.status === 200) { allOrders = res.data || []; renderTable(); }
+      } catch { document.getElementById('ordersBody').innerHTML = '<tr><td colspan="7" class="text-center text-muted">Lỗi tải dữ liệu</td></tr>'; }
+    }
+
+    function filterTab(el, s) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      el.classList.add('active');
+      currentFilter = s;
+      renderTable();
+    }
+
+    function renderTable() {
+      const filtered = currentFilter ? allOrders.filter(o => o.status === currentFilter) : allOrders;
+      const tbody = document.getElementById('ordersBody');
+      if (!filtered.length) { tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted" style="padding:32px">Không có đơn hàng</td></tr>'; return; }
+      const labelMap = {PENDING:'Chờ xử lý',CONFIRMED:'Đã xác nhận',SHIPPING:'Đang giao',DELIVERED:'Đã giao',CANCELLED:'Đã hủy'};
+      tbody.innerHTML = filtered.map(o => `<tr>
+        <td class="fw-600">#${o.orderCode || o.orderId}</td>
+        <td>${o.shippingName || '—'}</td>
+        <td>${o.items ? o.items.map(i => i.productName).join(', ') : '—'}</td>
+        <td class="fw-600 text-danger">${fmt(o.totalAmount)}</td>
+        <td>${o.paymentMethod || ''}</td>
+        <td class="text-sm">${o.createdAt ? new Date(o.createdAt).toLocaleDateString('vi-VN') : ''}</td>
+        <td>
+          ${o.status === 'PENDING' ? `<button class="btn btn-success btn-sm" onclick="confirmOrder(${o.orderId})">Xác nhận</button> <button class="btn btn-danger btn-sm" onclick="rejectOrder(${o.orderId})">Từ chối</button>` : `<span class="text-sm text-muted">${labelMap[o.status] || o.status}</span>`}
+        </td>
+      </tr>`).join('');
+    }
+
+    async function confirmOrder(id) {
+      try {
+        const res = await api.post(`/api/staff/orders/${id}/receive`);
+        showToast(res.status === 200 ? 'Đã xác nhận!' : res.message, res.status === 200 ? 'success' : 'error');
+        loadOrders();
+      } catch { showToast('Lỗi', 'error'); }
+    }
+
+    async function rejectOrder(id) {
+      if (!confirm('Bạn muốn từ chối đơn hàng này?')) return;
+      try {
+        const res = await api.post(`/api/staff/orders/${id}/status?status=CANCELLED`);
+        showToast(res.status === 200 ? 'Đã từ chối' : res.message, res.status === 200 ? 'success' : 'error');
+        loadOrders();
+      } catch { showToast('Lỗi', 'error'); }
+    }
+  </script>
+</body>
+</html>

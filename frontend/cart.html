@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+  <title>Giỏ hàng — PhoneShop</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    .cart-summary{background:var(--bg-card);border-radius:var(--radius-lg);border:1px solid var(--border-light);padding:16px;position:sticky;bottom:calc(var(--bottom-nav-h) + 8px)}
+    .voucher-row{display:flex;gap:8px;margin-bottom:12px}
+    .voucher-row input{flex:1}
+    .total-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0}
+    .total-label{color:var(--text-secondary);font-size:0.875rem}
+    .total-value{font-weight:700;font-size:1.125rem}
+    @media(min-width:768px){
+      .cart-layout{display:flex;gap:24px;padding:16px 32px;max-width:1000px;margin:0 auto}
+      .cart-items-col{flex:2}
+      .cart-summary-col{flex:1}
+      .cart-summary{position:sticky;top:80px}
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="flex items-center gap-12">
+      <button class="header-icon" onclick="history.back()"><i class="fas fa-arrow-left"></i></button>
+      <h3>Giỏ hàng của bạn</h3>
+    </div>
+    <a href="products.html" class="header-icon"><i class="fas fa-plus"></i></a>
+  </header>
+
+  <main class="page">
+    <!-- Steps -->
+    <div class="steps">
+      <div class="step active"><div class="step-circle">1</div></div>
+      <div class="step-line" style="background:var(--accent)"></div>
+      <div class="step"><div class="step-circle">2</div></div>
+      <div class="step-line"></div>
+      <div class="step"><div class="step-circle">3</div></div>
+    </div>
+    <div class="flex justify-center gap-24 mb-16" style="margin-top:-4px">
+      <span class="text-xs fw-600 text-accent">Giỏ hàng</span>
+      <span class="text-xs text-muted">Thanh toán</span>
+      <span class="text-xs text-muted">Hoàn tất</span>
+    </div>
+
+    <div class="cart-layout">
+      <div class="cart-items-col">
+        <div class="card">
+          <div class="card-body" id="cartItems">
+            <div class="spinner"></div>
+          </div>
+        </div>
+      </div>
+      <div class="cart-summary-col">
+        <div class="cart-summary">
+          <div class="voucher-row">
+            <input type="text" id="voucherInput" class="form-input" placeholder="Mã giảm giá">
+            <button class="btn btn-primary btn-sm" onclick="applyVoucher()">Áp dụng</button>
+          </div>
+          <div class="total-row"><span class="total-label">Tạm tính</span><span id="subtotal">0₫</span></div>
+          <div class="total-row"><span class="total-label">Giảm giá</span><span id="discount" class="text-success">0₫</span></div>
+          <div style="border-top:1px solid var(--border-light);margin:8px 0"></div>
+          <div class="total-row"><span class="fw-700">Tổng tiền</span><span class="total-value text-danger" id="total">0₫</span></div>
+          <button class="btn btn-primary btn-block btn-lg mt-12" id="checkoutBtn" onclick="goCheckout()">Tiếp tục thanh toán</button>
+          <a href="products.html" class="btn btn-outline btn-block mt-8" style="font-size:0.8125rem">← Quay lại mua thêm</a>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <nav class="bottom-nav">
+    <a href="index.html" class="bottom-nav-item"><i class="fas fa-home"></i><span>Trang chủ</span></a>
+    <a href="products.html" class="bottom-nav-item"><i class="fas fa-th-large"></i><span>Sản phẩm</span></a>
+    <a href="cart.html" class="bottom-nav-item active"><i class="fas fa-shopping-bag"></i><span>Giỏ hàng</span></a>
+    <a href="orders.html" class="bottom-nav-item"><i class="fas fa-box"></i><span>Đơn hàng</span></a>
+    <a href="profile.html" class="bottom-nav-item"><i class="fas fa-user"></i><span>Tài khoản</span></a>
+  </nav>
+
+  <script src="assets/js/api.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', loadCart);
+
+    async function loadCart() {
+      const c = document.getElementById('cartItems');
+      try {
+        const res = await api.get('/api/cart');
+        if (res.status === 200 && res.data) {
+          const items = res.data.items || res.data;
+          if (Array.isArray(items) && items.length > 0) {
+            renderCartItems(items, c);
+            updateTotals(items);
+          } else {
+            c.innerHTML = '<div class="empty-state"><i class="fas fa-shopping-bag"></i><h3>Giỏ hàng trống</h3><p>Hãy thêm sản phẩm vào giỏ!</p></div>';
+            document.getElementById('checkoutBtn').disabled = true;
+          }
+        } else {
+          c.innerHTML = '<div class="empty-state"><i class="fas fa-shopping-bag"></i><h3>Giỏ hàng trống</h3></div>';
+        }
+      } catch {
+        c.innerHTML = '<div class="empty-state"><p>Đăng nhập để xem giỏ hàng</p><a href="login.html" class="btn btn-primary btn-sm mt-12">Đăng nhập</a></div>';
+      }
+    }
+
+    function renderCartItems(items, c) {
+      c.innerHTML = items.map(item => `
+        <div class="cart-item">
+          <img src="${item.imageUrl || 'https://placehold.co/80x80/f5f5f7/999?text=SP'}" class="cart-item-img" onerror="this.src='https://placehold.co/80x80/f5f5f7/999?text=SP'">
+          <div class="cart-item-info">
+            <div class="cart-item-name">${item.productName || item.variantName || 'Sản phẩm'}</div>
+            <div class="cart-item-price">${fmt(item.price || item.unitPrice)}</div>
+            <div class="flex items-center justify-between mt-4">
+              <div class="qty-control">
+                <button onclick="updateQty(${item.cartItemId || item.id},-1)">−</button>
+                <span>${item.quantity}</span>
+                <button onclick="updateQty(${item.cartItemId || item.id},1)">+</button>
+              </div>
+              <button class="btn btn-ghost btn-sm text-danger" onclick="removeItem(${item.cartItemId || item.id})"><i class="fas fa-trash"></i></button>
+            </div>
+          </div>
+        </div>`).join('');
+    }
+
+    function updateTotals(items) {
+      const subtotal = items.reduce((s, i) => s + (i.price || i.unitPrice || 0) * i.quantity, 0);
+      document.getElementById('subtotal').textContent = fmt(subtotal);
+      document.getElementById('total').textContent = fmt(subtotal);
+    }
+
+    async function updateQty(itemId, delta) {
+      try { await api.put(`/api/cart/update/${itemId}?delta=${delta}`); loadCart(); } catch { showToast('Lỗi cập nhật', 'error'); }
+    }
+    async function removeItem(itemId) {
+      try { await api.del(`/api/cart/remove/${itemId}`); loadCart(); showToast('Đã xóa', 'info'); } catch { showToast('Lỗi xóa', 'error'); }
+    }
+    function applyVoucher() { showToast('Tính năng đang phát triển', 'info'); }
+    function goCheckout() { navigate('checkout.html'); }
+  </script>
+</body>
+</html>

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+  <title>Tài khoản — PhoneShop</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    .profile-header{text-align:center;padding:24px 16px}
+    .profile-avatar{width:72px;height:72px;border-radius:50%;background:var(--accent-light);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:2rem;color:var(--accent)}
+    .menu-item{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border-light);cursor:pointer;transition:background var(--transition);font-size:0.9375rem}
+    .menu-item:hover{background:var(--accent-light)}
+    .menu-item i{width:20px;text-align:center;color:var(--text-secondary)}
+    .menu-item .arrow{margin-left:auto;color:var(--text-muted);font-size:0.75rem}
+    .profile-section{background:var(--bg-card);border-radius:var(--radius-lg);border:1px solid var(--border-light);margin:12px 16px;overflow:hidden}
+    @media(min-width:768px){
+      .profile-layout{display:flex;gap:24px;max-width:900px;margin:0 auto;padding:16px 32px}
+      .profile-sidebar{width:280px;flex-shrink:0}
+      .profile-main{flex:1}
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="flex items-center gap-12">
+      <button class="header-icon" onclick="history.back()"><i class="fas fa-arrow-left"></i></button>
+      <h3>Tài khoản</h3>
+    </div>
+  </header>
+
+  <main class="page">
+    <div class="profile-layout">
+      <div class="profile-sidebar">
+        <div class="profile-header">
+          <div class="profile-avatar"><i class="fas fa-user"></i></div>
+          <h3 id="profileName">—</h3>
+          <p class="text-sm text-muted" id="profileEmail">—</p>
+        </div>
+
+        <div class="profile-section">
+          <div class="menu-item" onclick="showTab('info')"><i class="fas fa-user-edit"></i> Thông tin cá nhân <span class="arrow"><i class="fas fa-chevron-right"></i></span></div>
+          <div class="menu-item" onclick="navigate('orders.html')"><i class="fas fa-box"></i> Đơn hàng của tôi <span class="arrow"><i class="fas fa-chevron-right"></i></span></div>
+          <div class="menu-item" onclick="showTab('password')"><i class="fas fa-lock"></i> Đổi mật khẩu <span class="arrow"><i class="fas fa-chevron-right"></i></span></div>
+          <div class="menu-item" onclick="showTab('addresses')"><i class="fas fa-map-marker-alt"></i> Sổ địa chỉ <span class="arrow"><i class="fas fa-chevron-right"></i></span></div>
+          <div class="menu-item" onclick="handleLogout()" style="color:var(--danger)"><i class="fas fa-sign-out-alt" style="color:var(--danger)"></i> Đăng xuất</div>
+        </div>
+      </div>
+
+      <div class="profile-main">
+        <!-- Info Tab -->
+        <div id="tab-info" class="profile-section" style="margin:0;padding:16px">
+          <h4 class="mb-16">Thông tin cá nhân</h4>
+          <form id="profileForm" class="flex-col gap-12">
+            <div class="form-group"><label class="form-label">Họ và tên</label><input type="text" id="fullName" class="form-input"></div>
+            <div class="form-group"><label class="form-label">Email</label><input type="email" id="email" class="form-input" disabled></div>
+            <div class="form-group"><label class="form-label">Số điện thoại</label><input type="tel" id="phone" class="form-input"></div>
+            <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+          </form>
+        </div>
+
+        <!-- Password Tab -->
+        <div id="tab-password" class="profile-section hidden" style="margin:0;padding:16px">
+          <h4 class="mb-16">Đổi mật khẩu</h4>
+          <form id="passwordForm" class="flex-col gap-12">
+            <div class="form-group"><label class="form-label">Mật khẩu hiện tại</label><input type="password" id="oldPw" class="form-input" required></div>
+            <div class="form-group"><label class="form-label">Mật khẩu mới</label><input type="password" id="newPw" class="form-input" required minlength="6"></div>
+            <button type="submit" class="btn btn-primary">Đổi mật khẩu</button>
+          </form>
+        </div>
+
+        <!-- Addresses Tab -->
+        <div id="tab-addresses" class="profile-section hidden" style="margin:0;padding:16px">
+          <div class="flex justify-between items-center mb-16"><h4>Sổ địa chỉ</h4><button class="btn btn-primary btn-sm" onclick="showAddressForm()"><i class="fas fa-plus"></i> Thêm</button></div>
+          <div id="addressList"><div class="spinner"></div></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <nav class="bottom-nav">
+    <a href="index.html" class="bottom-nav-item"><i class="fas fa-home"></i><span>Trang chủ</span></a>
+    <a href="products.html" class="bottom-nav-item"><i class="fas fa-th-large"></i><span>Sản phẩm</span></a>
+    <a href="cart.html" class="bottom-nav-item"><i class="fas fa-shopping-bag"></i><span>Giỏ hàng</span></a>
+    <a href="orders.html" class="bottom-nav-item"><i class="fas fa-box"></i><span>Đơn hàng</span></a>
+    <a href="profile.html" class="bottom-nav-item active"><i class="fas fa-user"></i><span>Tài khoản</span></a>
+  </nav>
+
+  <script src="assets/js/api.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', loadProfile);
+
+    async function loadProfile() {
+      try {
+        const res = await api.get('/api/profile');
+        if (res.status === 200 && res.data) {
+          const d = res.data;
+          document.getElementById('profileName').textContent = d.fullName || d.name || '—';
+          document.getElementById('profileEmail').textContent = d.email || '—';
+          document.getElementById('fullName').value = d.fullName || d.name || '';
+          document.getElementById('email').value = d.email || '';
+          document.getElementById('phone').value = d.phone || '';
+        }
+      } catch { navigate('login.html'); }
+    }
+
+    function showTab(name) {
+      ['info', 'password', 'addresses'].forEach(t => {
+        document.getElementById('tab-' + t).classList.toggle('hidden', t !== name);
+      });
+      if (name === 'addresses') loadAddresses();
+    }
+
+    document.getElementById('profileForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      try {
+        const res = await api.postForm('/api/profile', {
+          fullName: document.getElementById('fullName').value,
+          phone: document.getElementById('phone').value
+        });
+        showToast(res.status === 200 ? 'Đã cập nhật!' : (res.message || 'Lỗi'), res.status === 200 ? 'success' : 'error');
+      } catch { showToast('Lỗi kết nối', 'error'); }
+    });
+
+    document.getElementById('passwordForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      try {
+        const res = await api.postForm('/api/profile/password', {
+          oldPassword: document.getElementById('oldPw').value,
+          newPassword: document.getElementById('newPw').value
+        });
+        showToast(res.status === 200 ? 'Đã đổi mật khẩu!' : (res.message || 'Lỗi'), res.status === 200 ? 'success' : 'error');
+      } catch { showToast('Lỗi kết nối', 'error'); }
+    });
+
+    async function loadAddresses() {
+      try {
+        const res = await api.get('/api/profile/addresses');
+        const list = document.getElementById('addressList');
+        const addrs = res.data || [];
+        if (!addrs.length) { list.innerHTML = '<p class="text-sm text-muted">Chưa có địa chỉ nào</p>'; return; }
+        list.innerHTML = addrs.map(a => `
+          <div style="padding:12px 0;border-bottom:1px solid var(--border-light)">
+            <div class="fw-500 text-sm">${a.fullAddress || a.address || '—'}</div>
+            ${a.isDefault ? '<span class="text-xs text-accent">✓ Mặc định</span>' : ''}
+          </div>`).join('');
+      } catch { document.getElementById('addressList').innerHTML = '<p class="text-sm text-muted">Lỗi tải địa chỉ</p>'; }
+    }
+
+    async function handleLogout() {
+      await auth.logout();
+      auth.clear();
+      navigate('index.html');
+    }
+  </script>
+</body>
+</html>

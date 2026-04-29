@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+  <title>Dashboard — PhoneShop Admin</title>
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    .admin-layout{display:flex;min-height:100vh}
+    .sidebar{width:240px;background:var(--bg-card);border-right:1px solid var(--border-light);padding:20px 0;position:fixed;top:0;bottom:0;overflow-y:auto;z-index:50}
+    .sidebar-logo{padding:0 20px 20px;font-size:1.125rem;font-weight:800;border-bottom:1px solid var(--border-light);margin-bottom:12px}
+    .sidebar-logo span{color:var(--accent)}
+    .sidebar-item{display:flex;align-items:center;gap:10px;padding:10px 20px;color:var(--text-secondary);font-size:0.875rem;font-weight:500;cursor:pointer;transition:all var(--transition)}
+    .sidebar-item:hover,.sidebar-item.active{background:var(--accent-light);color:var(--accent)}
+    .sidebar-item i{width:20px;text-align:center}
+    .admin-main{flex:1;margin-left:240px;padding:24px}
+    .chart-placeholder{background:var(--bg-card);border:1px solid var(--border-light);border-radius:var(--radius-lg);padding:24px;min-height:250px;display:flex;align-items:center;justify-content:center;color:var(--text-muted)}
+    @media(max-width:767px){
+      .sidebar{display:none;width:100%;position:fixed;z-index:200;top:var(--header-h);bottom:0}
+      .sidebar.open{display:block}
+      .admin-main{margin-left:0;padding:16px;padding-top:calc(var(--header-h) + 16px)}
+      .admin-header{display:flex!important}
+    }
+    @media(min-width:768px){.admin-header{display:none!important}}
+  </style>
+</head>
+<body>
+  <!-- Mobile Header -->
+  <header class="header admin-header">
+    <div class="flex items-center gap-12">
+      <button class="header-icon" onclick="document.querySelector('.sidebar').classList.toggle('open')"><i class="fas fa-bars"></i></button>
+      <span class="header-logo">Phone<span>Shop</span></span>
+    </div>
+    <span class="text-sm fw-600">Dashboard</span>
+  </header>
+
+  <div class="admin-layout">
+    <aside class="sidebar">
+      <div class="sidebar-logo">Phone<span>Shop</span></div>
+      <a href="dashboard.html" class="sidebar-item active"><i class="fas fa-chart-pie"></i> Dashboard</a>
+      <a href="products.html" class="sidebar-item"><i class="fas fa-box"></i> Sản phẩm</a>
+      <a href="orders.html" class="sidebar-item"><i class="fas fa-shopping-cart"></i> Đơn hàng</a>
+      <a href="employees.html" class="sidebar-item"><i class="fas fa-users"></i> Nhân viên</a>
+      <a href="reports.html" class="sidebar-item"><i class="fas fa-chart-bar"></i> Báo cáo</a>
+      <div style="border-top:1px solid var(--border-light);margin:16px 0"></div>
+      <a href="../profile.html" class="sidebar-item"><i class="fas fa-user-cog"></i> Hồ sơ</a>
+      <a href="#" class="sidebar-item" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a>
+    </aside>
+
+    <main class="admin-main">
+      <h1 class="mb-24">Dashboard</h1>
+      <div class="stat-grid mb-24" id="stats">
+        <div class="stat-card"><div class="stat-label">Tổng truy cập</div><div class="stat-value">—</div><div class="stat-change up">↑ Đang tải</div></div>
+        <div class="stat-card"><div class="stat-label">Doanh thu hôm nay</div><div class="stat-value">—</div></div>
+        <div class="stat-card"><div class="stat-label">Tổng đơn hàng</div><div class="stat-value">—</div></div>
+        <div class="stat-card"><div class="stat-label">Đơn chờ xử lý</div><div class="stat-value">—</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px">
+        <div class="chart-placeholder"><div><i class="fas fa-chart-line" style="font-size:2rem;margin-bottom:8px"></i><p>Biểu đồ doanh thu (24h)</p><p class="text-xs">Dữ liệu từ API /api/admin/reports</p></div></div>
+        <div class="chart-placeholder"><div><i class="fas fa-chart-pie" style="font-size:2rem;margin-bottom:8px"></i><p>Đơn hàng theo hãng</p><p class="text-xs">Tích hợp Chart.js khi có dữ liệu</p></div></div>
+      </div>
+    </main>
+  </div>
+
+  <script src="../assets/js/api.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', loadDashboard);
+    async function loadDashboard() {
+      try {
+        const res = await api.get('/api/admin/reports?period=day');
+        if (res.status === 200 && res.data && res.data.summary) {
+          const s = res.data.summary;
+          const cards = document.querySelectorAll('.stat-card');
+          cards[0].querySelector('.stat-value').textContent = s.totalVisits || '—';
+          cards[1].querySelector('.stat-value').textContent = fmt(s.totalRevenue || 0);
+          cards[2].querySelector('.stat-value').textContent = s.totalOrders || '0';
+          cards[3].querySelector('.stat-value').textContent = s.pendingOrders || '0';
+        }
+      } catch {}
+    }
+    async function handleLogout() { await auth.logout(); auth.clear(); navigate('../index.html'); }
+  </script>
+</body>
+</html>

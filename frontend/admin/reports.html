@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+  <title>Báo cáo — PhoneShop Admin</title>
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    .admin-layout{display:flex;min-height:100vh}.sidebar{width:240px;background:var(--bg-card);border-right:1px solid var(--border-light);padding:20px 0;position:fixed;top:0;bottom:0;overflow-y:auto;z-index:50}.sidebar-logo{padding:0 20px 20px;font-size:1.125rem;font-weight:800;border-bottom:1px solid var(--border-light);margin-bottom:12px}.sidebar-logo span{color:var(--accent)}.sidebar-item{display:flex;align-items:center;gap:10px;padding:10px 20px;color:var(--text-secondary);font-size:0.875rem;font-weight:500;cursor:pointer;transition:all var(--transition)}.sidebar-item:hover,.sidebar-item.active{background:var(--accent-light);color:var(--accent)}.sidebar-item i{width:20px;text-align:center}.admin-main{flex:1;margin-left:240px;padding:24px}
+    .report-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+    .summary-card{background:var(--bg-card);border:1px solid var(--border-light);border-radius:var(--radius-lg);padding:16px}
+    .summary-card dt{font-size:0.8125rem;color:var(--text-secondary);margin-bottom:4px}
+    .summary-card dd{font-size:1.125rem;font-weight:700}
+    @media(max-width:767px){.sidebar{display:none;width:100%;position:fixed;z-index:200;top:var(--header-h);bottom:0}.sidebar.open{display:block}.admin-main{margin-left:0;padding:16px;padding-top:calc(var(--header-h) + 16px)}.admin-header{display:flex!important}}
+    @media(min-width:768px){.admin-header{display:none!important}}
+  </style>
+</head>
+<body>
+  <header class="header admin-header"><div class="flex items-center gap-12"><button class="header-icon" onclick="document.querySelector('.sidebar').classList.toggle('open')"><i class="fas fa-bars"></i></button><span class="header-logo">Phone<span>Shop</span></span></div><span class="text-sm fw-600">Báo cáo</span></header>
+  <div class="admin-layout">
+    <aside class="sidebar"><div class="sidebar-logo">Phone<span>Shop</span></div><a href="dashboard.html" class="sidebar-item"><i class="fas fa-chart-pie"></i> Dashboard</a><a href="products.html" class="sidebar-item"><i class="fas fa-box"></i> Sản phẩm</a><a href="orders.html" class="sidebar-item"><i class="fas fa-shopping-cart"></i> Đơn hàng</a><a href="employees.html" class="sidebar-item"><i class="fas fa-users"></i> Nhân viên</a><a href="reports.html" class="sidebar-item active"><i class="fas fa-chart-bar"></i> Báo cáo</a></aside>
+    <main class="admin-main">
+      <h1 class="mb-16">Báo cáo & Thống kê</h1>
+      <div class="report-toolbar">
+        <select class="form-input" id="period" style="max-width:160px" onchange="loadReport()">
+          <option value="day">Hôm nay</option>
+          <option value="week">Tuần này</option>
+          <option value="month" selected>Tháng này</option>
+          <option value="year">Năm nay</option>
+        </select>
+        <button class="btn btn-primary btn-sm" onclick="loadReport()"><i class="fas fa-sync"></i> Tải lại</button>
+        <div style="flex:1"></div>
+        <a id="exportBtn" class="btn btn-success btn-sm" href="#"><i class="fas fa-file-excel"></i> Xuất Excel</a>
+      </div>
+
+      <div class="stat-grid mb-24" id="summaryCards">
+        <div class="summary-card"><dt>Tổng doanh thu</dt><dd id="sRevenue">—</dd></div>
+        <div class="summary-card"><dt>Tổng đơn hàng</dt><dd id="sOrders">—</dd></div>
+        <div class="summary-card"><dt>SP bán chạy nhất</dt><dd id="sTop">—</dd></div>
+        <div class="summary-card"><dt>Cảnh báo tồn kho</dt><dd id="sStock">—</dd></div>
+      </div>
+
+      <div class="card p-20">
+        <h4 class="mb-12">Top sản phẩm bán chạy</h4>
+        <div class="table-wrap">
+          <table class="table"><thead><tr><th>Sản phẩm</th><th>Số lượng bán</th><th>Doanh thu</th></tr></thead>
+          <tbody id="topBody"><tr><td colspan="3" class="text-center text-muted" style="padding:24px"><div class="spinner"></div></td></tr></tbody></table>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script src="../assets/js/api.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', loadReport);
+    async function loadReport() {
+      const period = document.getElementById('period').value;
+      document.getElementById('exportBtn').href = `${API}/api/admin/reports/export?period=${period}`;
+      try {
+        const res = await api.get(`/api/admin/reports?period=${period}`);
+        if (res.status === 200 && res.data) {
+          const d = res.data;
+          if (d.summary) {
+            document.getElementById('sRevenue').textContent = fmt(d.summary.totalRevenue || 0);
+            document.getElementById('sOrders').textContent = d.summary.totalOrders || 0;
+          }
+          if (d.topProducts && d.topProducts.length) {
+            document.getElementById('sTop').textContent = d.topProducts[0].productName || '—';
+            document.getElementById('topBody').innerHTML = d.topProducts.map(p => `<tr><td class="fw-500">${p.productName || '—'}</td><td>${p.quantitySold || 0}</td><td class="fw-600">${fmt(p.revenue || 0)}</td></tr>`).join('');
+          }
+          if (d.stockAlerts) document.getElementById('sStock').textContent = d.stockAlerts.length + ' sản phẩm';
+        }
+      } catch { showToast('Lỗi tải báo cáo', 'error'); }
+    }
+  </script>
+</body>
+</html>

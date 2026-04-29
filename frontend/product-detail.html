@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+  <title>Chi tiết sản phẩm — PhoneShop</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    .detail-img{width:100%;aspect-ratio:1;object-fit:cover;background:var(--bg);border-radius:0}
+    .detail-thumbs{display:flex;gap:8px;padding:8px 16px;overflow-x:auto;scrollbar-width:none}
+    .detail-thumbs::-webkit-scrollbar{display:none}
+    .detail-thumb{width:56px;height:56px;border-radius:var(--radius-sm);border:2px solid var(--border-light);object-fit:cover;cursor:pointer;flex-shrink:0}
+    .detail-thumb.active{border-color:var(--accent)}
+    .detail-info{padding:16px}
+    .detail-actions{display:flex;gap:8px;padding:16px;position:sticky;bottom:calc(var(--bottom-nav-h));background:var(--bg-card);border-top:1px solid var(--border-light);z-index:10}
+    .variant-chips{display:flex;gap:8px;flex-wrap:wrap}
+    .reviews-section{padding:16px}
+    .review-item{padding:12px 0;border-bottom:1px solid var(--border-light)}
+    .review-item:last-child{border-bottom:none}
+    @media(min-width:768px){
+      .detail-layout{display:flex;gap:32px;padding:24px 32px;max-width:1000px;margin:0 auto}
+      .detail-img-col{flex:1;position:sticky;top:80px;height:fit-content}
+      .detail-img{border-radius:var(--radius-lg)}
+      .detail-info-col{flex:1}
+      .detail-actions{position:static;border:none;padding:0;margin-top:16px}
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="flex items-center gap-12">
+      <button class="header-icon" onclick="history.back()"><i class="fas fa-arrow-left"></i></button>
+      <span class="header-logo">Phone<span>Shop</span></span>
+    </div>
+    <div class="header-actions">
+      <a href="cart.html" class="header-icon"><i class="fas fa-shopping-bag"></i><span class="badge" id="cartBadge">0</span></a>
+    </div>
+  </header>
+
+  <main class="page" id="main">
+    <div style="text-align:center;padding:60px"><div class="spinner"></div></div>
+  </main>
+
+  <nav class="bottom-nav">
+    <a href="index.html" class="bottom-nav-item"><i class="fas fa-home"></i><span>Trang chủ</span></a>
+    <a href="products.html" class="bottom-nav-item"><i class="fas fa-th-large"></i><span>Sản phẩm</span></a>
+    <a href="cart.html" class="bottom-nav-item"><i class="fas fa-shopping-bag"></i><span>Giỏ hàng</span></a>
+    <a href="orders.html" class="bottom-nav-item"><i class="fas fa-box"></i><span>Đơn hàng</span></a>
+    <a href="profile.html" class="bottom-nav-item"><i class="fas fa-user"></i><span>Tài khoản</span></a>
+  </nav>
+
+  <script src="assets/js/api.js"></script>
+  <script>
+    let product = null, selectedVariant = null;
+    document.addEventListener('DOMContentLoaded', async () => {
+      const id = getParam('id');
+      if (!id) { navigate('products.html'); return; }
+      try {
+        const res = await api.get(`/api/products/${id}`);
+        if (res.status === 200) {
+          product = res.data.product || res.data;
+          const reviews = res.data.reviews || [];
+          renderDetail(product, reviews);
+        } else {
+          document.getElementById('main').innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><h3>Không tìm thấy sản phẩm</h3></div>';
+        }
+      } catch {
+        document.getElementById('main').innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><h3>Lỗi kết nối</h3></div>';
+      }
+    });
+
+    function renderDetail(p, reviews) {
+      const images = p.images || [];
+      const mainImg = images.length > 0 ? images[0].imageUrl : 'https://placehold.co/600x600/f5f5f7/999?text=No+Image';
+      document.title = p.name + ' — PhoneShop';
+
+      let variantsHtml = '';
+      if (p.variants && p.variants.length > 0) {
+        variantsHtml = `<div class="mb-16"><div class="form-label mb-8">Dung lượng</div><div class="variant-chips">
+          ${p.variants.map((v, i) => `<div class="chip ${i === 0 ? 'active' : ''}" onclick="selectVariant(this, ${i})">${v.storage_gb || v.storageGb || ''}GB</div>`).join('')}
+        </div></div>`;
+        selectedVariant = p.variants[0];
+      }
+
+      let reviewsHtml = '';
+      if (reviews.length > 0) {
+        reviewsHtml = reviews.map(r => `
+          <div class="review-item">
+            <div class="flex items-center gap-8 mb-4">
+              <strong class="text-sm">${r.customerName || 'Khách hàng'}</strong>
+              <span style="color:var(--warning)">${renderStars(r.rating)}</span>
+            </div>
+            <p class="text-sm text-muted">${r.comment || ''}</p>
+          </div>`).join('');
+      } else {
+        reviewsHtml = '<p class="text-sm text-muted">Chưa có đánh giá nào.</p>';
+      }
+
+      document.getElementById('main').innerHTML = `
+        <!-- Breadcrumb -->
+        <div style="padding:8px 16px;font-size:0.75rem;color:var(--text-muted)">
+          <a href="index.html" style="color:var(--text-muted)">Trang chủ</a> > <a href="products.html" style="color:var(--text-muted)">Sản phẩm</a> > ${p.name}
+        </div>
+
+        <div class="detail-layout">
+          <div class="detail-img-col">
+            <img src="${mainImg}" alt="${p.name}" class="detail-img" id="mainImage" onerror="this.src='https://placehold.co/600x600/f5f5f7/999?text=No+Image'">
+            ${images.length > 1 ? `<div class="detail-thumbs">${images.map((img, i) => `<img src="${img.imageUrl}" class="detail-thumb ${i === 0 ? 'active' : ''}" onclick="changeImage(this,'${img.imageUrl}')" onerror="this.style.display='none'">`).join('')}</div>` : ''}
+          </div>
+
+          <div class="detail-info-col">
+            <div class="detail-info">
+              <h1>${p.name}</h1>
+              <div class="flex items-center gap-8 mt-8">
+                <span class="text-sm text-muted">${p.brand || ''}</span>
+                ${p.totalStock > 0 ? '<span class="text-xs text-success"><i class="fas fa-check-circle"></i> Còn hàng</span>' : '<span class="text-xs text-danger">Hết hàng</span>'}
+              </div>
+              <div class="product-card-price" style="font-size:1.5rem;margin:12px 0">${fmt(p.price)}</div>
+              ${variantsHtml}
+            </div>
+
+            <div class="detail-actions">
+              <button class="btn btn-danger btn-block btn-lg" onclick="addToCartAction()" ${p.totalStock <= 0 ? 'disabled' : ''}>
+                <i class="fas fa-cart-plus"></i> Thêm vào giỏ
+              </button>
+              <button class="btn btn-primary btn-block btn-lg" onclick="buyNow()" ${p.totalStock <= 0 ? 'disabled' : ''}>
+                Mua ngay
+              </button>
+            </div>
+
+            <div class="detail-info">
+              <h3 class="mb-8">Mô tả chi tiết</h3>
+              <p class="text-sm text-muted">${p.description || 'Chưa có mô tả.'}</p>
+            </div>
+
+            <div class="reviews-section">
+              <h3 class="mb-12">Đánh giá sản phẩm</h3>
+              ${reviewsHtml}
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function changeImage(el, url) {
+      document.getElementById('mainImage').src = url;
+      document.querySelectorAll('.detail-thumb').forEach(t => t.classList.remove('active'));
+      el.classList.add('active');
+    }
+
+    function selectVariant(el, idx) {
+      document.querySelectorAll('.variant-chips .chip').forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+      selectedVariant = product.variants[idx];
+    }
+
+    function addToCartAction() {
+      if (!product) return;
+      showToast('Đã thêm vào giỏ hàng!', 'success');
+    }
+
+    function buyNow() {
+      addToCartAction();
+      setTimeout(() => navigate('cart.html'), 500);
+    }
+  </script>
+</body>
+</html>

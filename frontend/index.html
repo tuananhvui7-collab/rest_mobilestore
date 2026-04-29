@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+  <title>PhoneShop — Điện Thoại Chính Hãng</title>
+  <meta name="description" content="Mua điện thoại chính hãng giá tốt nhất. iPhone, Samsung, Oppo, Xiaomi. Giao hàng nhanh, bảo hành 12 tháng.">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="flex items-center gap-12">
+      <button class="header-icon mobile-only" onclick="toggleMenu()" aria-label="Menu"><i class="fas fa-bars"></i></button>
+      <a href="index.html" class="header-logo">Phone<span>Shop</span></a>
+      <nav class="desktop-nav" style="display:none">
+        <a href="index.html" style="font-weight:600;color:var(--text)">Trang chủ</a>
+        <a href="products.html">Sản phẩm</a>
+      </nav>
+    </div>
+    <div class="header-actions">
+      <a href="products.html" class="header-icon" aria-label="Tìm kiếm"><i class="fas fa-search"></i></a>
+      <a href="cart.html" class="header-icon" aria-label="Giỏ hàng"><i class="fas fa-shopping-bag"></i><span class="badge" id="cartBadge">0</span></a>
+      <a href="login.html" class="header-icon" id="loginBtn" aria-label="Đăng nhập"><i class="fas fa-user"></i></a>
+      <a href="profile.html" class="header-icon hidden" id="userArea" aria-label="Tài khoản"><i class="fas fa-user-circle"></i></a>
+    </div>
+  </header>
+
+  <!-- HERO BANNER -->
+  <main class="page">
+    <div class="hero-banner">
+      <h2>Điện Thoại Mới 2026</h2>
+      <p>Khuyến mãi lớn — Giảm đến 30% cho dòng flagship.</p>
+      <a href="products.html" class="btn btn-sm" style="background:#fff;color:#333;font-weight:700">Mua Ngay <i class="fas fa-arrow-right" style="font-size:0.75rem"></i></a>
+    </div>
+
+    <!-- CATEGORIES -->
+    <div class="section">
+      <div class="section-title">Danh mục</div>
+      <div class="category-scroll" id="categories">
+        <div class="category-pill active" onclick="navigate('products.html')"><i class="fas fa-mobile-alt"></i><span>Tất cả</span></div>
+        <div class="category-pill" onclick="navigate('products.html',{brand:'Apple'})"><i class="fab fa-apple"></i><span>Apple</span></div>
+        <div class="category-pill" onclick="navigate('products.html',{brand:'Samsung'})"><i class="fas fa-mobile-screen"></i><span>Samsung</span></div>
+        <div class="category-pill" onclick="navigate('products.html',{brand:'Oppo'})"><i class="fas fa-mobile"></i><span>Oppo</span></div>
+        <div class="category-pill" onclick="navigate('products.html',{brand:'Xiaomi'})"><i class="fas fa-tablet-screen-button"></i><span>Xiaomi</span></div>
+      </div>
+    </div>
+
+    <!-- FEATURED PRODUCTS -->
+    <div class="section">
+      <div class="section-title">Sản phẩm nổi bật <a href="products.html">Xem tất cả →</a></div>
+      <div class="product-grid" id="featuredGrid">
+        <div style="grid-column:1/-1"><div class="spinner"></div></div>
+      </div>
+    </div>
+
+    <!-- PROMO BANNER -->
+    <div style="margin:20px 16px">
+      <div style="background:linear-gradient(135deg,#f093fb 0%,#f5576c 100%);border-radius:var(--radius-lg);padding:24px;color:#fff;text-align:center">
+        <h3 style="font-size:1.125rem;font-weight:700">Miễn phí vận chuyển</h3>
+        <p style="font-size:0.8125rem;opacity:0.9;margin-top:4px">Cho đơn hàng từ 2.000.000₫</p>
+      </div>
+    </div>
+
+    <!-- MORE PRODUCTS -->
+    <div class="section">
+      <div class="section-title">Sản phẩm mới <a href="products.html">Xem tất cả →</a></div>
+      <div class="product-grid" id="moreGrid">
+        <div style="grid-column:1/-1"><div class="spinner"></div></div>
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+      <div class="container">
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:24px">
+          <div>
+            <div class="footer-title">PhoneShop</div>
+            <div class="footer-links">
+              <a href="#">Về chúng tôi</a>
+              <a href="#">Liên hệ</a>
+              <a href="#">Chính sách bảo mật</a>
+            </div>
+          </div>
+          <div>
+            <div class="footer-title">Hỗ trợ</div>
+            <div class="footer-links">
+              <a href="#">FAQ</a>
+              <a href="#">Đổi trả hàng</a>
+              <a href="#">Bảo hành</a>
+            </div>
+          </div>
+        </div>
+        <div class="footer-social">
+          <a href="#"><i class="fab fa-facebook"></i></a>
+          <a href="#"><i class="fab fa-instagram"></i></a>
+          <a href="#"><i class="fab fa-youtube"></i></a>
+        </div>
+        <div class="footer-bottom">© 2026 PhoneShop. All rights reserved.</div>
+      </div>
+    </footer>
+  </main>
+
+  <!-- BOTTOM NAV (Mobile) -->
+  <nav class="bottom-nav">
+    <a href="index.html" class="bottom-nav-item active"><i class="fas fa-home"></i><span>Trang chủ</span></a>
+    <a href="products.html" class="bottom-nav-item"><i class="fas fa-th-large"></i><span>Sản phẩm</span></a>
+    <a href="cart.html" class="bottom-nav-item"><i class="fas fa-shopping-bag"></i><span>Giỏ hàng</span></a>
+    <a href="orders.html" class="bottom-nav-item"><i class="fas fa-box"></i><span>Đơn hàng</span></a>
+    <a href="profile.html" class="bottom-nav-item"><i class="fas fa-user"></i><span>Tài khoản</span></a>
+  </nav>
+
+  <script src="assets/js/api.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      updateHeader();
+      loadFeatured();
+    });
+
+    async function loadFeatured() {
+      try {
+        const res = await api.get('/api/products?size=4');
+        if (res.status === 200 && res.data && res.data.content) {
+          renderGrid('featuredGrid', res.data.content.slice(0, 4));
+          renderGrid('moreGrid', res.data.content.slice(4, 8));
+        } else {
+          document.getElementById('featuredGrid').innerHTML = '<div class="empty-state"><p>Chưa có sản phẩm</p></div>';
+        }
+      } catch (e) {
+        document.getElementById('featuredGrid').innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><h3>Lỗi kết nối</h3><p>Hãy chắc chắn Backend đang chạy.</p></div>';
+      }
+    }
+
+    function renderGrid(containerId, products) {
+      const c = document.getElementById(containerId);
+      if (!products || products.length === 0) {
+        c.innerHTML = '<div class="empty-state"><p>Chưa có sản phẩm</p></div>';
+        return;
+      }
+      c.innerHTML = products.map(p => {
+        const img = (p.images && p.images.length > 0) ? p.images[0].imageUrl : 'https://placehold.co/400x400/f5f5f7/999?text=No+Image';
+        return `
+          <div class="product-card" onclick="navigate('product-detail.html',{id:${p.productId}})">
+            <img src="${img}" alt="${p.name}" class="product-card-img" onerror="this.src='https://placehold.co/400x400/f5f5f7/999?text=No+Image'">
+            <div class="product-card-body">
+              <div class="product-card-name">${p.name}</div>
+              <div class="product-card-price">${fmt(p.price)}</div>
+              ${p.totalStock > 0 ? '<div class="text-xs text-success mt-4"><i class="fas fa-check-circle"></i> Còn hàng</div>' : '<div class="text-xs text-danger mt-4">Hết hàng</div>'}
+            </div>
+          </div>`;
+      }).join('');
+    }
+  </script>
+</body>
+</html>

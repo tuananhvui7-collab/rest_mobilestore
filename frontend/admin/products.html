@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+  <title>Quản lý sản phẩm — PhoneShop Admin</title>
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    .admin-layout{display:flex;min-height:100vh}.sidebar{width:240px;background:var(--bg-card);border-right:1px solid var(--border-light);padding:20px 0;position:fixed;top:0;bottom:0;overflow-y:auto;z-index:50}.sidebar-logo{padding:0 20px 20px;font-size:1.125rem;font-weight:800;border-bottom:1px solid var(--border-light);margin-bottom:12px}.sidebar-logo span{color:var(--accent)}.sidebar-item{display:flex;align-items:center;gap:10px;padding:10px 20px;color:var(--text-secondary);font-size:0.875rem;font-weight:500;cursor:pointer;transition:all var(--transition)}.sidebar-item:hover,.sidebar-item.active{background:var(--accent-light);color:var(--accent)}.sidebar-item i{width:20px;text-align:center}.admin-main{flex:1;margin-left:240px;padding:24px}
+    .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;align-items:center}
+    @media(max-width:767px){.sidebar{display:none;width:100%;position:fixed;z-index:200;top:var(--header-h);bottom:0}.sidebar.open{display:block}.admin-main{margin-left:0;padding:16px;padding-top:calc(var(--header-h) + 16px)}.admin-header{display:flex!important}}
+    @media(min-width:768px){.admin-header{display:none!important}}
+  </style>
+</head>
+<body>
+  <header class="header admin-header"><div class="flex items-center gap-12"><button class="header-icon" onclick="document.querySelector('.sidebar').classList.toggle('open')"><i class="fas fa-bars"></i></button><span class="header-logo">Phone<span>Shop</span></span></div><span class="text-sm fw-600">Sản phẩm</span></header>
+  <div class="admin-layout">
+    <aside class="sidebar"><div class="sidebar-logo">Phone<span>Shop</span></div><a href="dashboard.html" class="sidebar-item"><i class="fas fa-chart-pie"></i> Dashboard</a><a href="products.html" class="sidebar-item active"><i class="fas fa-box"></i> Sản phẩm</a><a href="orders.html" class="sidebar-item"><i class="fas fa-shopping-cart"></i> Đơn hàng</a><a href="employees.html" class="sidebar-item"><i class="fas fa-users"></i> Nhân viên</a><a href="reports.html" class="sidebar-item"><i class="fas fa-chart-bar"></i> Báo cáo</a></aside>
+    <main class="admin-main">
+      <h1 class="mb-16">Quản lý sản phẩm</h1>
+      <div class="toolbar">
+        <input type="text" class="form-input" placeholder="Tìm kiếm..." id="searchInput" style="max-width:240px" oninput="loadProducts()">
+        <select class="form-input" id="statusFilter" style="max-width:160px" onchange="loadProducts()"><option value="">Tất cả trạng thái</option><option value="ACTIVE">Active</option><option value="INACTIVE">Inactive</option></select>
+        <div style="flex:1"></div>
+        <button class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Thêm sản phẩm</button>
+      </div>
+      <div class="card"><div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>Ảnh</th><th>Tên sản phẩm</th><th>Giá</th><th>Tồn kho</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+          <tbody id="productsBody"><tr><td colspan="6" style="text-align:center;padding:32px"><div class="spinner"></div></td></tr></tbody>
+        </table>
+      </div></div>
+    </main>
+  </div>
+  <script src="../assets/js/api.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', loadProducts);
+    async function loadProducts() {
+      try {
+        const res = await api.get('/api/admin/products');
+        if (res.status === 200) {
+          let products = res.data || [];
+          const kw = document.getElementById('searchInput').value.toLowerCase();
+          const st = document.getElementById('statusFilter').value;
+          if (kw) products = products.filter(p => (p.name || '').toLowerCase().includes(kw));
+          if (st) products = products.filter(p => p.status === st);
+          renderTable(products);
+        }
+      } catch { document.getElementById('productsBody').innerHTML = '<tr><td colspan="6" class="text-center text-muted">Lỗi tải</td></tr>'; }
+    }
+    function renderTable(products) {
+      const tbody = document.getElementById('productsBody');
+      if (!products.length) { tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted" style="padding:32px">Không có sản phẩm</td></tr>'; return; }
+      tbody.innerHTML = products.map(p => {
+        const img = (p.images && p.images.length) ? p.images[0].imageUrl : '';
+        return `<tr>
+          <td><img src="${img || 'https://placehold.co/40x40/f5f5f7/999?text=SP'}" style="width:40px;height:40px;border-radius:6px;object-fit:cover" onerror="this.src='https://placehold.co/40x40/f5f5f7/999?text=SP'"></td>
+          <td class="fw-500">${p.name}</td>
+          <td class="fw-600">${fmt(p.price)}</td>
+          <td>${p.totalStock || 0}</td>
+          <td><span class="order-status ${p.status === 'ACTIVE' ? 'status-confirmed' : 'status-cancelled'}">${p.status}</span></td>
+          <td><button class="btn btn-outline btn-sm">Sửa</button> <button class="btn btn-sm" style="color:var(--danger)" onclick="toggleProduct(${p.productId},'${p.status}')">${p.status === 'ACTIVE' ? 'Ẩn' : 'Hiện'}</button></td>
+        </tr>`;
+      }).join('');
+    }
+    async function toggleProduct(id, status) {
+      const action = status === 'ACTIVE' ? 'delete' : 'restore';
+      try { await api.post(`/api/admin/products/${id}/${action}`); loadProducts(); showToast('Đã cập nhật!', 'success'); } catch { showToast('Lỗi', 'error'); }
+    }
+  </script>
+</body>
+</html>
