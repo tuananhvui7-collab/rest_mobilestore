@@ -7,6 +7,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.http.HttpMethod;
 
 // @Configuration: day la class cau hinh, Spring doc khi khoi dong
 /// QUY TRÌNH
@@ -71,6 +72,9 @@ public class SecurityConfig {
             .userDetailsService(customUserDetailsService)// cái này phải gọi cái object này mới đúng
             // ===== PHAN QUYEN URL =====
             .authorizeHttpRequests(auth -> auth
+
+                // 👉 THÊM DÒNG NÀY ĐẦU TIÊN: Mở cửa cho mọi Preflight Request của CORS
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
                 // REVIEW: endpoint đánh giá sản phẩm — yêu cầu CUSTOMER
                 .requestMatchers(

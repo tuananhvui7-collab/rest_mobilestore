@@ -4,13 +4,17 @@ const API = 'http://localhost:8080';
 const api = {
   async request(method, path, body, isForm = false) {
     const opts = { method, credentials: 'include' };
-    if (body && isForm) {
-      opts.headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
-      opts.body = new URLSearchParams(body);
-    } else if (body) {
-      opts.headers = { 'Content-Type': 'application/json' };
-      opts.body = JSON.stringify(body);
+if (body) {
+        if (isFormData || method === 'GET') {
+            const params = new URLSearchParams(body).toString();
+            path += (path.includes('?') ? '&' : '?') + params;
+        } else {
+            opts.headers['Content-Type'] = 'application/json';
+            opts.body = JSON.stringify(body);
+        }
     }
+    // Đảm bảo trong hàm fetch phía dưới có cộng biến này:
+// fetch(API + path, opts);
     const res = await fetch(API + path, opts);
     const contentType = res.headers.get('content-type') || '';
     if (contentType.includes('json')) return res.json();

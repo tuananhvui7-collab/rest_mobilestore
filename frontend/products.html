@@ -118,7 +118,7 @@
       grid.innerHTML = '<div style="grid-column:1/-1"><div class="spinner"></div></div>';
       const keyword = document.getElementById('searchInput').value;
       const brand = currentBrand || (document.getElementById('brandSelect') ? document.getElementById('brandSelect').value : '');
-      let url = `http://localhost:8080/api/products?page=${currentPage}&size=8`;
+      let url = `/api/products?page=${currentPage}&size=8`;
       if (keyword) url += `&keyword=${encodeURIComponent(keyword)}`;
       if (brand) url += `&brand=${encodeURIComponent(brand)}`;
       try {

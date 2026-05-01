@@ -165,12 +165,7 @@ async function handleLogin(e) {
         formData.append('password', p);
         
         // Disable auto-redirect manually by checking response type
-        const response = await fetch(AUTH_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: formData,
-            redirect: 'manual' // Prevents browser from throwing 404 on redirect
-        });
+        const response = await auth.login(u, p);
         
         // Since Fetch with redirect:'manual' returns opaque response type for 302,
         // we just assume success if it doesn't throw network error, or we can just try fetching profile

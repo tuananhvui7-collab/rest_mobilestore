@@ -23,6 +23,10 @@ import com.ecommerce.mobile.enums.PaymentMethod;
 import com.ecommerce.mobile.service.CartService;
 import com.ecommerce.mobile.service.CustomerService;
 import com.ecommerce.mobile.service.OrderService;
+import com.ecommerce.mobile.service.VnpayService;
+
+import jakarta.servlet.http.HttpServletRequest;
+
 import com.ecommerce.mobile.response.ApiResponse;
 import com.ecommerce.mobile.dto.response.OrderDto;
 import com.ecommerce.mobile.mapper.OrderMapper;
@@ -82,34 +86,37 @@ public class OrderController {
         return ApiResponse.success("Lấy thông tin thanh toán thành công", data);
     }
 
-    @PostMapping("/place")
-    public ApiResponse<OrderDto> placeOrder(@AuthenticationPrincipal UserDetails principal,
-                             @RequestParam String shippingName,
-                             @RequestParam String shippingPhone,
-                             @RequestParam String shippingAddress,
-                             @RequestParam(required = false) String shippingWard,
-                             @RequestParam(required = false) String shippingDistrict,
-                             @RequestParam String shippingCity,
-                             @RequestParam(required = false) String voucherCode,
-                             @RequestParam String paymentMethod,
-                             @RequestParam Long cartId) {
+@PostMapping("/place")
+    public ApiResponse<Map<String, Object>> placeOrder(@AuthenticationPrincipal UserDetails principal,
+                                         @RequestParam String shippingName,
+                                         @RequestParam String shippingPhone,
+                                         @RequestParam String shippingAddress,
+                                         @RequestParam(required = false) String shippingWard,
+                                         @RequestParam(required = false) String shippingDistrict,
+                                         @RequestParam String shippingCity,
+                                         @RequestParam(required = false) String voucherCode,
+                                         @RequestParam String paymentMethod,
+                                         @RequestParam Long cartId,
+                                         HttpServletRequest request) { // Thêm HttpServletRequest để VNPAY lấy IP
+        
         PaymentMethod method = PaymentMethod.valueOf(paymentMethod);
         Order order = orderService.placeOrder(
-                principal.getUsername(),
-                shippingName,
-                shippingPhone,
-                shippingAddress,
-                shippingWard,
-                shippingDistrict,
-                shippingCity,
-                voucherCode,
-                method,
-                cartId
+                principal.getUsername(), shippingName, shippingPhone,
+                shippingAddress, shippingWard, shippingDistrict,
+                shippingCity, voucherCode, method, cartId
         );
         
-        return ApiResponse.success("Đặt hàng thành công", OrderMapper.toDto(order));
+        Map<String, Object> responseData = new HashMap<>();
+        responseData.put("order", OrderMapper.toDto(order));
+        
+        // NẾU LÀ VNPAY: Sinh link thanh toán ngay lập tức
+        if (method == PaymentMethod.VN_PAY && !order.getPayments().isEmpty()) {
+            String paymentUrl = VnpayService.createPaymentUrl(order.getPayments().get(0), request);
+            responseData.put("paymentUrl", paymentUrl);
+        }
+        
+        return ApiResponse.success("Đặt hàng thành công", responseData);
     }
-
     @GetMapping
     public ApiResponse<List<OrderDto>> orderList(@AuthenticationPrincipal UserDetails principal) {
         List<Order> orders = orderService.getOrdersByCustomerEmail(principal.getUsername());

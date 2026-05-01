@@ -96,6 +96,7 @@
     document.addEventListener('DOMContentLoaded', loadCheckout);
     async function loadCheckout() {
       try {
+        let currentCartId = null;
         const res = await api.get('/api/orders/checkout-info');
         if (res.status === 200 && res.data) {
           const d = res.data;
@@ -126,32 +127,64 @@
     }
 
     document.getElementById('checkoutForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const btn = document.getElementById('placeBtn');
-      btn.disabled = true;
-      btn.innerHTML = '<div class="spinner" style="width:20px;height:20px;border-width:2px"></div>';
-      const payment = document.querySelector('input[name=payment]:checked').value;
-      try {
-        const res = await api.post('/api/orders/place', {
+    e.preventDefault();
+    const btn = document.getElementById('placeBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner" style="width:20px;height:20px;border-width:2px"></div>';
+    
+    const payment = document.querySelector('input[name=payment]:checked').value;
+    
+    try {
+              // Trong sự kiện submit form
+      const res = await api.postForm('/api/orders/place', {
           shippingName: document.getElementById('name').value,
           shippingPhone: document.getElementById('phone').value,
           shippingAddress: document.getElementById('address').value,
-          paymentMethod: payment
-        });
-        if (res.status === 200) {
-          showToast('Đặt hàng thành công!', 'success');
-          setTimeout(() => navigate('orders.html'), 1000);
+          paymentMethod: payment,
+          cartId: currentCartId // Truyền ID động đã lấy ở trên
+      });
+
+        if (res.status === 200 && res.data) {
+            const orderData = res.data;
+
+            // Xử lý riêng nếu khách chọn VN_PAY
+            if (payment === 'VN_PAY') {
+                // Lấy paymentId từ OrderDto trả về. (Giả sử DTO của bạn có mảng payments hoặc paymentId)
+                // Bạn hãy log res.data ra để lấy chính xác tên biến nhé, thường là orderData.paymentId hoặc orderData.payments[0].paymentId
+                const paymentId = orderData.paymentId || (orderData.payments && orderData.payments[0].paymentId);
+
+                if (paymentId) {
+                    // Bước 2: Gọi API lấy link VNPay (PaymentController)
+                    const vnpayRes = await api.get(`/api/payments/${paymentId}/vnpay-url`);
+                    
+                    if (vnpayRes.status === 200 && vnpayRes.data && vnpayRes.data.paymentUrl) {
+                        // Chuyển hướng khách hàng sang cổng VNPay
+                        window.location.href = vnpayRes.data.paymentUrl;
+                        return; // Dừng luồng tại đây để chờ VNPay xử lý
+                    }
+                }
+                showToast('Lỗi tạo link thanh toán VNPay. Vui lòng thử lại!', 'error');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-lock"></i> Đặt hàng';
+                return;
+            }
+
+            // Nếu là COD, báo thành công và về trang danh sách đơn
+            showToast('Đặt hàng thành công!', 'success');
+            setTimeout(() => navigate('orders.html'), 1000);
+            
         } else {
-          showToast(res.message || 'Đặt hàng thất bại', 'error');
-          btn.disabled = false;
-          btn.innerHTML = '<i class="fas fa-lock"></i> Đặt hàng';
+            showToast(res.message || 'Đặt hàng thất bại', 'error');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-lock"></i> Đặt hàng';
         }
-      } catch {
+    } catch (err) {
+        console.error(err);
         showToast('Lỗi kết nối', 'error');
         btn.disabled = false;
         btn.innerHTML = '<i class="fas fa-lock"></i> Đặt hàng';
-      }
-    });
+    }
+});
   </script>
 </body>
 </html>
