@@ -1,5 +1,5 @@
 /* ===== PhoneShop API Client ===== */
-const API = '';
+const API = 'http://localhost:8080';
 
 const api = {
   async request(method, path, body, isForm = false) {

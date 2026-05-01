@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+  <title>Đánh giá sản phẩm — PhoneShop</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    .product-section{background:var(--bg-card);border:1px solid var(--border-light);border-radius:var(--radius-lg);padding:16px;margin-bottom:12px}
+    .product-card-review{display:flex;gap:12px;padding-bottom:12px;border-bottom:1px solid var(--border-light);margin-bottom:12px}
+    .product-card-review:last-child{border-bottom:none;margin-bottom:0}
+    .product-img-review{width:72px;height:72px;border-radius:var(--radius-md);object-fit:cover;background:var(--bg)}
+    .product-info-review{flex:1}
+    .product-name-review{font-weight:600;font-size:0.9375rem;margin-bottom:4px}
+    .product-price-review{color:var(--text-muted);font-size:0.8125rem}
+    .star-input{display:flex;gap:8px;font-size:1.75rem;margin:12px 0}
+    .star-input .star{cursor:pointer;color:var(--border-light);transition:color var(--transition)}
+    .star-input .star:hover,.star-input .star.active{color:var(--warning)}
+    .form-section-review{margin-bottom:12px}
+    .form-section-review label{display:block;margin-bottom:8px;font-weight:600;font-size:0.9375rem}
+    .form-input-review{width:100%;padding:12px;border:1px solid var(--border-light);border-radius:var(--radius-md);font-family:inherit;font-size:0.9375rem;resize:vertical;transition:border-color var(--transition)}
+    .form-input-review:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-light)}
+    .input-feedback{display:flex;justify-content:space-between;margin-top:4px;font-size:0.75rem;color:var(--text-muted)}
+    .image-upload{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+    .upload-box{width:72px;height:72px;border:2px dashed var(--border-light);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all var(--transition);background:var(--bg)}
+    .upload-box:hover{border-color:var(--accent);background:var(--accent-light)}
+    .upload-box i{font-size:1.5rem;color:var(--accent)}
+    .upload-preview{position:relative}
+    .upload-preview img{width:72px;height:72px;border-radius:var(--radius-md);object-fit:cover}
+    .upload-remove{position:absolute;top:-8px;right:-8px;width:24px;height:24px;background:var(--danger);color:#fff;border:none;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:0.75rem}
+    .review-card{background:var(--bg-card);border:1px solid var(--border-light);border-radius:var(--radius-lg);padding:12px;margin-bottom:8px}
+    .review-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+    .review-author{font-weight:600;font-size:0.9375rem}
+    .review-rating{color:var(--warning);font-size:0.8125rem}
+    .review-text{font-size:0.8125rem;color:var(--text-secondary);line-height:1.6;margin-bottom:8px}
+    .review-images{display:flex;gap:6px;flex-wrap:wrap}
+    .review-img{width:48px;height:48px;border-radius:var(--radius-sm);object-fit:cover;cursor:pointer}
+    @media(min-width:768px){
+      .review-layout{max-width:700px;margin:0 auto;padding:16px 32px}
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="flex items-center gap-12">
+      <button class="header-icon" onclick="history.back()"><i class="fas fa-arrow-left"></i></button>
+      <h3>Đánh giá sản phẩm</h3>
+    </div>
+  </header>
+
+  <main class="page">
+    <div class="review-layout" style="padding:0 16px">
+      <div id="reviewContainer"><div style="text-align:center;padding:60px"><div class="spinner"></div></div></div>
+    </div>
+  </main>
+
+  <nav class="bottom-nav">
+    <a href="index.html" class="bottom-nav-item"><i class="fas fa-home"></i><span>Trang chủ</span></a>
+    <a href="products.html" class="bottom-nav-item"><i class="fas fa-th-large"></i><span>Sản phẩm</span></a>
+    <a href="cart.html" class="bottom-nav-item"><i class="fas fa-shopping-bag"></i><span>Giỏ hàng</span></a>
+    <a href="orders.html" class="bottom-nav-item active"><i class="fas fa-box"></i><span>Đơn hàng</span></a>
+    <a href="profile.html" class="bottom-nav-item"><i class="fas fa-user"></i><span>Tài khoản</span></a>
+  </nav>
+
+  <script src="assets/js/api.js"></script>
+  <script>
+    let selectedRating = 5;
+    let uploadedImages = [];
+
+    document.addEventListener('DOMContentLoaded', loadReviewData);
+
+    async function loadReviewData() {
+      const orderId = getParam('orderId');
+      const itemId = getParam('itemId');
+
+      if (!orderId || !itemId) {
+        navigate('orders.html');
+        return;
+      }
+
+      try {
+        const res = await api.get(`/api/orders/${orderId}/items/${itemId}`);
+        if (res.status === 200 && res.data) {
+          renderReviewForm(res.data, orderId, itemId);
+        } else {
+          document.getElementById('reviewContainer').innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><h3>Không tìm thấy sản phẩm</h3><a href="orders.html" class="btn btn-primary btn-sm mt-12">Quay lại</a></div>';
+        }
+      } catch {
+        document.getElementById('reviewContainer').innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><h3>Lỗi tải thông tin</h3><a href="orders.html" class="btn btn-primary btn-sm mt-12">Quay lại</a></div>';
+      }
+    }
+
+    function renderReviewForm(item, orderId, itemId) {
+      const existingReview = item.review || null;
+
+      const html = `
+        <div class="product-section">
+          <h4 style="margin-bottom:12px"><i class="fas fa-box" style="color:var(--accent);margin-right:8px"></i>Sản phẩm</h4>
+          <div class="product-card-review">
+            <img src="${item.imageUrl || 'https://placehold.co/72x72/f5f5f7/999?text=SP'}" class="product-img-review" onerror="this.src='https://placehold.co/72x72/f5f5f7/999?text=SP'">
+            <div class="product-info-review">
+              <div class="product-name-review">${item.productName || 'Sản phẩm'}</div>
+              <div class="product-price-review">${fmt(item.price)} - Số lượng: ${item.quantity}</div>
+            </div>
+          </div>
+        </div>
+
+        <form id="reviewForm" class="product-section">
+          <h4 style="margin-bottom:8px"><i class="fas fa-star" style="color:var(--accent);margin-right:8px"></i>Đánh giá của bạn</h4>
+          
+          <div style="margin-bottom:16px">
+            <label style="display:block;font-size:0.875rem;color:var(--text-muted);margin-bottom:8px">Mức độ hài lòng</label>
+            <div class="star-input" id="starRating">
+              <i class="fas fa-star star" data-rating="1"></i>
+              <i class="fas fa-star star" data-rating="2"></i>
+              <i class="fas fa-star star" data-rating="3"></i>
+              <i class="fas fa-star star" data-rating="4"></i>
+              <i class="fas fa-star star active" data-rating="5"></i>
+            </div>
+            <div style="font-size:0.8125rem;color:var(--accent);font-weight:600" id="ratingText">Rất hài lòng</div>
+          </div>
+
+          <div class="form-section-review">
+            <label>Tiêu đề đánh giá</label>
+            <input type="text" id="reviewTitle" class="form-input-review" placeholder="VD: Sản phẩm tuyệt vời, rất đáng tiền" maxlength="100" required>
+            <div class="input-feedback">
+              <span id="titleCount">0</span>
+              <span>/100 ký tự</span>
+            </div>
+          </div>
+
+          <div class="form-section-review">
+            <label>Nội dung đánh giá</label>
+            <textarea id="reviewContent" class="form-input-review" placeholder="Chia sẻ trải nghiệm chi tiết của bạn về sản phẩm..." maxlength="1000" required></textarea>
+            <div class="input-feedback">
+              <span id="contentCount">0</span>
+              <span>/1000 ký tự</span>
+            </div>
+          </div>
+
+          <div class="form-section-review">
+            <label>Hình ảnh (tối đa 5 hình, mỗi hình ≤ 5MB)</label>
+            <input type="file" id="imageInput" accept="image/*" multiple style="display:none">
+            <div class="image-upload" id="imageContainer">
+              <div class="upload-box" onclick="document.getElementById('imageInput').click()">
+                <i class="fas fa-cloud-upload-alt"></i>
+              </div>
+            </div>
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:8px">Hình ảnh thực tế sẽ giúp người khác quyết định mua hàng tốt hơn</div>
+          </div>
+
+          <div class="flex gap-8" style="margin-top:16px">
+            <button type="submit" class="btn btn-primary btn-block" id="submitBtn">
+              <i class="fas fa-check"></i> Gửi đánh giá
+            </button>
+            <a href="javascript:history.back()" class="btn btn-outline btn-block"><i class="fas fa-times"></i> Hủy</a>
+          </div>
+        </form>
+
+        <div id="existingReviewsSection" style="display:${item.reviews && item.reviews.length > 0 ? 'block' : 'none'}">
+          <div style="padding-top:16px;border-top:2px solid var(--border-light);margin-top:16px">
+            <h4 style="margin-bottom:12px"><i class="fas fa-comments" style="color:var(--accent);margin-right:8px"></i>Đánh giá khác (${item.reviews ? item.reviews.length : 0})</h4>
+            <div id="reviewsList"></div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('reviewContainer').innerHTML = html;
+      setupReviewForm(orderId, itemId);
+      if (item.reviews && item.reviews.length > 0) {
+        renderExistingReviews(item.reviews);
+      }
+    }
+
+    function setupReviewForm(orderId, itemId) {
+      // Star rating
+      const stars = document.querySelectorAll('.star');
+      const ratingText = {
+        1: 'Rất không hài lòng',
+        2: 'Không hài lòng',
+        3: 'Bình thường',
+        4: 'Hài lòng',
+        5: 'Rất hài lòng'
+      };
+
+      stars.forEach(star => {
+        star.addEventListener('click', () => {
+          const rating = parseInt(star.dataset.rating);
+          selectedRating = rating;
+          stars.forEach(s => {
+            if (parseInt(s.dataset.rating) <= rating) {
+              s.classList.add('active');
+            } else {
+              s.classList.remove('active');
+            }
+          });
+          document.getElementById('ratingText').textContent = ratingText[rating];
+        });
+      });
+
+      // Character counters
+      document.getElementById('reviewTitle').addEventListener('input', (e) => {
+        document.getElementById('titleCount').textContent = e.target.value.length;
+      });
+      document.getElementById('reviewContent').addEventListener('input', (e) => {
+        document.getElementById('contentCount').textContent = e.target.value.length;
+      });
+
+      // Image upload
+      document.getElementById('imageInput').addEventListener('change', async (e) => {
+        const files = Array.from(e.target.files);
+        if (uploadedImages.length + files.length > 5) {
+          showToast('Tối đa 5 hình ảnh', 'error');
+          return;
+        }
+
+        for (const file of files) {
+          if (file.size > 5 * 1024 * 1024) {
+            showToast(`${file.name} vượt quá 5MB`, 'error');
+            continue;
+          }
+
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            uploadedImages.push({
+              name: file.name,
+              data: event.target.result
+            });
+            renderImagePreview();
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+
+      // Form submit
+      document.getElementById('reviewForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const title = document.getElementById('reviewTitle').value.trim();
+        const content = document.getElementById('reviewContent').value.trim();
+
+        if (!title || !content) {
+          showToast('Vui lòng điền đầy đủ thông tin', 'error');
+          return;
+        }
+
+        const btn = document.getElementById('submitBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<div class="spinner" style="width:20px;height:20px;border-width:2px"></div>';
+
+        try {
+          const res = await api.post(`/api/reviews`, {
+            orderId,
+            itemId,
+            rating: selectedRating,
+            title,
+            comment: content,
+            imageCount: uploadedImages.length
+          });
+
+          if (res.status === 200 || res.status === 201) {
+            showToast('Cảm ơn bạn đã đánh giá!', 'success');
+            setTimeout(() => navigate('orders.html'), 1500);
+          } else {
+            showToast(res.message || 'Lỗi gửi đánh giá', 'error');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-check"></i> Gửi đánh giá';
+          }
+        } catch {
+          showToast('Lỗi kết nối', 'error');
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-check"></i> Gửi đánh giá';
+        }
+      });
+    }
+
+    function renderImagePreview() {
+      const container = document.getElementById('imageContainer');
+      let html = '<div class="upload-box" onclick="document.getElementById(\'imageInput\').click()"><i class="fas fa-cloud-upload-alt"></i></div>';
+      
+      uploadedImages.forEach((img, idx) => {
+        html += `
+          <div class="upload-preview">
+            <img src="${img.data}" alt="Preview">
+            <button type="button" class="upload-remove" onclick="removeImage(${idx})">×</button>
+          </div>`;
+      });
+
+      container.innerHTML = html;
+    }
+
+    function removeImage(idx) {
+      uploadedImages.splice(idx, 1);
+      renderImagePreview();
+    }
+
+    function renderExistingReviews(reviews) {
+      const container = document.getElementById('reviewsList');
+      container.innerHTML = reviews.map(r => `
+        <div class="review-card">
+          <div class="review-header">
+            <div>
+              <div class="review-author">${r.customerName || 'Khách hàng'}</div>
+              <div class="review-rating">${renderStars(r.rating)} (${r.rating}/5)</div>
+            </div>
+          </div>
+          <div style="font-weight:600;font-size:0.9375rem;margin-bottom:6px">${r.title || ''}</div>
+          <div class="review-text">${r.comment || ''}</div>
+          ${r.images && r.images.length > 0 ? `
+          <div class="review-images">
+            ${r.images.map(img => `<img src="${img.imageUrl}" class="review-img">`).join('')}
+          </div>` : ''}
+        </div>
+      `).join('');
+    }
+  </script>
+</body>
+</html>

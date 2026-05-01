@@ -1,6 +1,6 @@
-const API_BASE_URL = 'http://localhost:8080/api';
+const API_BASE_URL = 'http://localhost:8080/api/';
 const AUTH_URL = 'http://localhost:8080/login'; // Form login
-const VNPAY_URL = 'http://localhost:8080/payments/vnpay/create-payment';
+const VNPAY_URL = 'http://localhost:8080/api/payments/vnpay/create-payment';
 
 let cart = [];
 let currentUser = null;

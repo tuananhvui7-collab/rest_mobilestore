@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+  <title>Chăm sóc khách hàng — PhoneShop</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    .support-tabs{display:flex;gap:8px;padding:0 16px;margin-bottom:16px;border-bottom:1px solid var(--border-light);overflow-x:auto;scrollbar-width:none}
+    .support-tabs::-webkit-scrollbar{display:none}
+    .support-tab{padding:12px 16px;border:none;background:transparent;cursor:pointer;font-weight:500;font-size:0.9375rem;color:var(--text-muted);border-bottom:2px solid transparent;white-space:nowrap;transition:all var(--transition)}
+    .support-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+    .form-card{background:var(--bg-card);border:1px solid var(--border-light);border-radius:var(--radius-lg);padding:16px;margin-bottom:12px}
+    .form-group{margin-bottom:12px}
+    .form-label{display:block;font-weight:600;font-size:0.9375rem;margin-bottom:8px;color:var(--text)}
+    .form-input-support{width:100%;padding:10px 12px;border:1px solid var(--border-light);border-radius:var(--radius-md);font-family:inherit;font-size:0.9375rem;transition:border-color var(--transition)}
+    .form-input-support:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-light)}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .ticket-card{background:var(--bg-card);border:1px solid var(--border-light);border-radius:var(--radius-lg);padding:12px;margin-bottom:8px;cursor:pointer;transition:all var(--transition)}
+    .ticket-card:hover{box-shadow:var(--shadow-md)}
+    .ticket-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+    .ticket-id{font-weight:600;font-size:0.9375rem;color:var(--text)}
+    .ticket-status{display:inline-block;padding:4px 10px;border-radius:var(--radius-sm);font-size:0.7rem;font-weight:600}
+    .status-new{background:rgba(0,113,227,0.1);color:var(--accent)}
+    .status-open{background:rgba(255,149,0,0.1);color:var(--warning)}
+    .status-resolved{background:rgba(52,199,89,0.1);color:var(--success)}
+    .status-closed{background:rgba(174,174,178,0.1);color:var(--text-muted)}
+    .ticket-desc{font-size:0.8125rem;color:var(--text-secondary);margin-bottom:6px}
+    .ticket-date{font-size:0.75rem;color:var(--text-muted)}
+    .message-thread{background:var(--bg);border-radius:var(--radius-md);padding:12px;margin-bottom:12px;max-height:300px;overflow-y:auto}
+    .message-item{margin-bottom:12px;padding:8px;background:var(--bg-card);border-radius:var(--radius-sm)}
+    .message-item:last-child{margin-bottom:0}
+    .message-author{font-weight:600;font-size:0.8125rem;margin-bottom:4px}
+    .message-author.support{color:var(--accent)}
+    .message-text{font-size:0.8125rem;color:var(--text-secondary);line-height:1.5}
+    .message-time{font-size:0.7rem;color:var(--text-muted);margin-top:4px}
+    .category-select{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+    .category-btn{padding:10px;border:2px solid var(--border-light);border-radius:var(--radius-md);background:transparent;cursor:pointer;font-size:0.8125rem;transition:all var(--transition);text-align:center}
+    .category-btn:hover{border-color:var(--accent);color:var(--accent)}
+    .category-btn.active{background:var(--accent-light);border-color:var(--accent);color:var(--accent)}
+    @media(min-width:768px){
+      .support-layout{display:flex;gap:24px;max-width:1000px;margin:0 auto;padding:16px 32px}
+      .support-form-col{flex:1}
+      .support-tickets-col{flex:1}
+      .form-row{grid-template-columns:1fr 1fr}
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="flex items-center gap-12">
+      <button class="header-icon" onclick="history.back()"><i class="fas fa-arrow-left"></i></button>
+      <h3>Hỗ trợ khách hàng</h3>
+    </div>
+  </header>
+
+  <main class="page">
+    <div class="support-layout" style="padding:0 16px">
+      <div class="support-form-col">
+        <div class="form-card">
+          <h4 style="margin-bottom:16px"><i class="fas fa-paper-plane" style="color:var(--accent);margin-right:8px"></i>Gửi yêu cầu hỗ trợ</h4>
+          <form id="supportForm">
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Họ tên</label>
+                <input type="text" id="fullName" class="form-input-support" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="email" id="email" class="form-input-support" required>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Số điện thoại</label>
+                <input type="tel" id="phone" class="form-input-support" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Số đơn hàng (nếu có)</label>
+                <input type="text" id="orderId" class="form-input-support" placeholder="VD: #12345">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Danh mục vấn đề</label>
+              <div class="category-select">
+                <button type="button" class="category-btn active" onclick="selectCategory(this,'general')">
+                  <i class="fas fa-question-circle" style="margin-right:4px"></i>Câu hỏi chung
+                </button>
+                <button type="button" class="category-btn" onclick="selectCategory(this,'quality')">
+                  <i class="fas fa-star-half-alt" style="margin-right:4px"></i>Chất lượng SP
+                </button>
+                <button type="button" class="category-btn" onclick="selectCategory(this,'delivery')">
+                  <i class="fas fa-truck" style="margin-right:4px"></i>Vấn đề giao hàng
+                </button>
+                <button type="button" class="category-btn" onclick="selectCategory(this,'refund')">
+                  <i class="fas fa-undo" style="margin-right:4px"></i>Hoàn lại tiền
+                </button>
+                <button type="button" class="category-btn" onclick="selectCategory(this,'exchange')">
+                  <i class="fas fa-exchange-alt" style="margin-right:4px"></i>Đổi sản phẩm
+                </button>
+                <button type="button" class="category-btn" onclick="selectCategory(this,'other')">
+                  <i class="fas fa-plus" style="margin-right:4px"></i>Khác
+                </button>
+              </div>
+              <input type="hidden" id="category" value="general">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Nội dung yêu cầu</label>
+              <textarea id="message" class="form-input-support" style="min-height:120px;resize:vertical" placeholder="Vui lòng mô tả chi tiết vấn đề của bạn..." required></textarea>
+              <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:0.75rem;color:var(--text-muted)">
+                <span id="msgCount">0</span>
+                <span>/2000 ký tự</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="flex items-center gap-8" style="cursor:pointer">
+                <input type="checkbox" id="agreeTerms" required style="accent-color:var(--accent);width:16px;height:16px">
+                <span class="text-sm">Tôi đồng ý với chính sách bảo mật và xử lý dữ liệu</span>
+              </label>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block btn-lg" id="submitBtn">
+              <i class="fas fa-send"></i> Gửi yêu cầu
+            </button>
+          </form>
+        </div>
+
+        <div style="background:var(--accent-light);border-left:4px solid var(--accent);padding:12px;border-radius:var(--radius-md);font-size:0.8125rem">
+          <strong>Thời gian phản hồi:</strong> 
+          <p style="margin-top:4px">Chúng tôi thường phản hồi trong 24 giờ. Vui lòng kiểm tra email hoặc nhật ký hỗ trợ để nhận cập nhật.</p>
+        </div>
+      </div>
+
+      <div class="support-tickets-col">
+        <div class="form-card">
+          <h4 style="margin-bottom:12px"><i class="fas fa-history" style="color:var(--accent);margin-right:8px"></i>Nhật ký hỗ trợ</h4>
+          <div id="ticketsList"><div style="text-align:center;padding:20px"><div class="spinner"></div></div></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <nav class="bottom-nav">
+    <a href="index.html" class="bottom-nav-item"><i class="fas fa-home"></i><span>Trang chủ</span></a>
+    <a href="products.html" class="bottom-nav-item"><i class="fas fa-th-large"></i><span>Sản phẩm</span></a>
+    <a href="cart.html" class="bottom-nav-item"><i class="fas fa-shopping-bag"></i><span>Giỏ hàng</span></a>
+    <a href="orders.html" class="bottom-nav-item"><i class="fas fa-box"></i><span>Đơn hàng</span></a>
+    <a href="profile.html" class="bottom-nav-item"><i class="fas fa-user"></i><span>Tài khoản</span></a>
+  </nav>
+
+  <!-- Ticket Detail Modal -->
+  <div id="ticketModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:200;overflow-y:auto;padding:20px 16px">
+    <div style="background:var(--bg-card);border-radius:var(--radius-lg);max-width:600px;margin:0 auto;padding:20px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <h3>Chi tiết yêu cầu</h3>
+        <button style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--text-muted)" onclick="closeTicketModal()">×</button>
+      </div>
+      <div id="ticketDetailContent"></div>
+    </div>
+  </div>
+
+  <script src="assets/js/api.js"></script>
+  <script>
+    let selectedCategory = 'general';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadTickets();
+      loadProfileInfo();
+    });
+
+    async function loadProfileInfo() {
+      try {
+        const res = await api.get('/api/profile');
+        if (res.status === 200 && res.data) {
+          document.getElementById('fullName').value = res.data.fullName || '';
+          document.getElementById('email').value = res.data.email || '';
+          document.getElementById('phone').value = res.data.phone || '';
+        }
+      } catch { /* User not logged in */ }
+    }
+
+    async function loadTickets() {
+      try {
+        const res = await api.get('/api/support/tickets');
+        if (res.status === 200 && res.data) {
+          const tickets = Array.isArray(res.data) ? res.data : (res.data.content || []);
+          renderTickets(tickets);
+        } else {
+          renderTickets([]);
+        }
+      } catch {
+        renderTickets([]);
+      }
+    }
+
+    function renderTickets(tickets) {
+      const container = document.getElementById('ticketsList');
+      if (!tickets || tickets.length === 0) {
+        container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i><p class="text-sm text-muted">Chưa có yêu cầu hỗ trợ nào</p></div>';
+        return;
+      }
+
+      const statusMap = {
+        'NEW': 'status-new',
+        'OPEN': 'status-open',
+        'RESOLVED': 'status-resolved',
+        'CLOSED': 'status-closed'
+      };
+
+      const labelMap = {
+        'NEW': 'Mới',
+        'OPEN': 'Đang xử lý',
+        'RESOLVED': 'Đã giải quyết',
+        'CLOSED': 'Đóng'
+      };
+
+      container.innerHTML = tickets.map(t => `
+        <div class="ticket-card" onclick="showTicketDetail('${t.ticketId || t.id}')">
+          <div class="ticket-header">
+            <div>
+              <div class="ticket-id">#${t.ticketCode || t.ticketId}</div>
+              <div class="ticket-desc">${t.subject || 'Yêu cầu hỗ trợ'}</div>
+            </div>
+            <span class="ticket-status ${statusMap[t.status] || ''}">
+              ${labelMap[t.status] || t.status}
+            </span>
+          </div>
+          <div class="ticket-date">${t.createdAt ? new Date(t.createdAt).toLocaleDateString('vi-VN') : ''}</div>
+        </div>`).join('');
+    }
+
+    function selectCategory(btn, cat) {
+      document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      selectedCategory = cat;
+      document.getElementById('category').value = cat;
+    }
+
+    document.getElementById('message').addEventListener('input', (e) => {
+      document.getElementById('msgCount').textContent = e.target.value.length;
+      if (e.target.value.length > 2000) {
+        e.target.value = e.target.value.slice(0, 2000);
+        document.getElementById('msgCount').textContent = '2000';
+      }
+    });
+
+    document.getElementById('supportForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      if (!document.getElementById('agreeTerms').checked) {
+        showToast('Vui lòng đồng ý với chính sách', 'error');
+        return;
+      }
+
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<div class="spinner" style="width:20px;height:20px;border-width:2px"></div>';
+
+      try {
+        const res = await api.post('/api/support/create-ticket', {
+          fullName: document.getElementById('fullName').value,
+          email: document.getElementById('email').value,
+          phone: document.getElementById('phone').value,
+          orderId: document.getElementById('orderId').value || null,
+          category: selectedCategory,
+          subject: document.getElementById('message').value.substring(0, 100),
+          message: document.getElementById('message').value
+        });
+
+        if (res.status === 200 || res.status === 201) {
+          showToast('Yêu cầu của bạn đã được gửi thành công!', 'success');
+          document.getElementById('supportForm').reset();
+          selectedCategory = 'general';
+          document.querySelectorAll('.category-btn').forEach((b, i) => {
+            b.classList.toggle('active', i === 0);
+          });
+          loadTickets();
+        } else {
+          showToast(res.message || 'Lỗi gửi yêu cầu', 'error');
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-send"></i> Gửi yêu cầu';
+        }
+      } catch {
+        showToast('Lỗi kết nối', 'error');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-send"></i> Gửi yêu cầu';
+      }
+    });
+
+    async function showTicketDetail(ticketId) {
+      try {
+        const res = await api.get(`/api/support/tickets/${ticketId}`);
+        if (res.status === 200 && res.data) {
+          const ticket = res.data;
+          const statusMap = {
+            'NEW': 'Mới',
+            'OPEN': 'Đang xử lý',
+            'RESOLVED': 'Đã giải quyết',
+            'CLOSED': 'Đóng'
+          };
+
+          let messagesHtml = '';
+          if (ticket.messages && ticket.messages.length > 0) {
+            messagesHtml = ticket.messages.map(m => `
+              <div class="message-item">
+                <div class="message-author ${m.isFromSupport ? 'support' : ''}">
+                  ${m.isFromSupport ? '📞 Hỗ trợ' : 'Bạn'}
+                </div>
+                <div class="message-text">${m.message}</div>
+                <div class="message-time">${new Date(m.createdAt).toLocaleString('vi-VN')}</div>
+              </div>`).join('');
+          }
+
+          const html = `
+            <div style="margin-bottom:16px">
+              <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+                <div>
+                  <h4>#${ticket.ticketCode}</h4>
+                  <p class="text-sm text-muted">${new Date(ticket.createdAt).toLocaleDateString('vi-VN')}</p>
+                </div>
+                <span class="ticket-status" style="padding:8px 12px;font-size:0.8125rem">${statusMap[ticket.status] || ticket.status}</span>
+              </div>
+              <p class="text-sm fw-600">${ticket.subject}</p>
+            </div>
+
+            ${messagesHtml ? `
+            <div style="margin-bottom:16px">
+              <div class="form-label">Lịch sử tin nhắn</div>
+              <div class="message-thread">${messagesHtml}</div>
+            </div>` : ''}
+
+            ${ticket.status !== 'CLOSED' ? `
+            <div class="form-group">
+              <textarea id="replyMessage" class="form-input-support" style="min-height:80px" placeholder="Nhập tin nhắn trả lời..."></textarea>
+            </div>
+            <button class="btn btn-primary btn-block" onclick="sendReply('${ticketId}')">
+              <i class="fas fa-paper-plane"></i> Gửi trả lời
+            </button>
+            ` : ''}
+
+            <button class="btn btn-outline btn-block mt-12" onclick="closeTicketModal()">Đóng</button>
+          `;
+
+          document.getElementById('ticketDetailContent').innerHTML = html;
+          document.getElementById('ticketModal').style.display = 'flex';
+        }
+      } catch {
+        showToast('Lỗi tải chi tiết', 'error');
+      }
+    }
+
+    async function sendReply(ticketId) {
+      const msg = document.getElementById('replyMessage').value.trim();
+      if (!msg) {
+        showToast('Vui lòng nhập tin nhắn', 'error');
+        return;
+      }
+
+      try {
+        const res = await api.post(`/api/support/tickets/${ticketId}/reply`, {
+          message: msg
+        });
+
+        if (res.status === 200) {
+          showToast('Trả lời đã được gửi!', 'success');
+          showTicketDetail(ticketId);
+        } else {
+          showToast(res.message || 'Lỗi gửi trả lời', 'error');
+        }
+      } catch {
+        showToast('Lỗi kết nối', 'error');
+      }
+    }
+
+    function closeTicketModal() {
+      document.getElementById('ticketModal').style.display = 'none';
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+  <title>Theo dõi đơn hàng — PhoneShop</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    .tracking-container{background:var(--bg-card);border:1px solid var(--border-light);border-radius:var(--radius-lg);padding:16px;margin-bottom:12px}
+    .tracking-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border-light)}
+    .tracking-status{display:inline-block;padding:6px 12px;background:var(--accent-light);color:var(--accent);border-radius:var(--radius-md);font-size:0.75rem;font-weight:600}
+    .timeline{position:relative;padding-left:24px}
+    .timeline-item{position:relative;padding:16px 0;border-left:2px solid var(--border-light)}
+    .timeline-item.completed{border-left-color:var(--success)}
+    .timeline-item.active{border-left-color:var(--accent)}
+    .timeline-item::before{content:'';position:absolute;left:-7px;top:20px;width:12px;height:12px;border-radius:50%;background:var(--border-light);border:2px solid var(--bg-card)}
+    .timeline-item.completed::before{background:var(--success);border-color:var(--bg-card)}
+    .timeline-item.active::before{background:var(--accent);border-color:var(--bg-card)}
+    .timeline-time{font-size:0.75rem;color:var(--text-muted);font-weight:500}
+    .timeline-title{font-weight:600;font-size:0.9375rem;margin:4px 0}
+    .timeline-desc{font-size:0.8125rem;color:var(--text-secondary)}
+    .location-info{background:var(--bg);border-radius:var(--radius-md);padding:12px;margin-top:8px;font-size:0.8125rem}
+    .location-label{color:var(--text-muted);margin-bottom:4px}
+    .location-value{font-weight:600;color:var(--text)}
+    .tracking-detail{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border-light);font-size:0.8125rem}
+    .tracking-detail:last-child{border-bottom:none}
+    .contact-section{background:var(--bg);border-radius:var(--radius-md);padding:12px;margin-top:12px}
+    @media(min-width:768px){
+      .tracking-layout{max-width:700px;margin:0 auto;padding:16px 32px}
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="flex items-center gap-12">
+      <button class="header-icon" onclick="history.back()"><i class="fas fa-arrow-left"></i></button>
+      <h3>Theo dõi đơn hàng</h3>
+    </div>
+  </header>
+
+  <main class="page">
+    <div class="tracking-layout" style="padding:0 16px">
+      <div id="trackingContainer"><div style="text-align:center;padding:60px"><div class="spinner"></div></div></div>
+    </div>
+  </main>
+
+  <nav class="bottom-nav">
+    <a href="index.html" class="bottom-nav-item"><i class="fas fa-home"></i><span>Trang chủ</span></a>
+    <a href="products.html" class="bottom-nav-item"><i class="fas fa-th-large"></i><span>Sản phẩm</span></a>
+    <a href="cart.html" class="bottom-nav-item"><i class="fas fa-shopping-bag"></i><span>Giỏ hàng</span></a>
+    <a href="orders.html" class="bottom-nav-item active"><i class="fas fa-box"></i><span>Đơn hàng</span></a>
+    <a href="profile.html" class="bottom-nav-item"><i class="fas fa-user"></i><span>Tài khoản</span></a>
+  </nav>
+
+  <script src="assets/js/api.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', loadTracking);
+
+    async function loadTracking() {
+      const orderId = getParam('id');
+      if (!orderId) {
+        navigate('orders.html');
+        return;
+      }
+
+      try {
+        const res = await api.get(`/api/orders/${orderId}/tracking`);
+        if (res.status === 200 && res.data) {
+          renderTracking(res.data);
+        } else {
+          document.getElementById('trackingContainer').innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><h3>Không tìm thấy đơn hàng</h3><a href="orders.html" class="btn btn-primary btn-sm mt-12">Quay lại</a></div>';
+        }
+      } catch {
+        document.getElementById('trackingContainer').innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><h3>Lỗi tải thông tin</h3><a href="orders.html" class="btn btn-primary btn-sm mt-12">Quay lại</a></div>';
+      }
+    }
+
+    function renderTracking(order) {
+      const statusMap = {
+        'PENDING': { label: 'Chờ xác nhận', icon: 'clock', color: '#ff9500' },
+        'CONFIRMED': { label: 'Đã xác nhận', icon: 'check-circle', color: '#34c759' },
+        'SHIPPING': { label: 'Đang giao', icon: 'truck', color: '#0071e3' },
+        'DELIVERED': { label: 'Đã giao', icon: 'check-circle', color: '#34c759' },
+        'CANCELLED': { label: 'Đã hủy', icon: 'times-circle', color: '#ff3b30' }
+      };
+
+      const timeline = [
+        { status: 'PENDING', title: 'Chờ xác nhận', desc: 'Đơn hàng được tạo' },
+        { status: 'CONFIRMED', title: 'Đã xác nhận', desc: 'Chúng tôi đã xác nhận đơn hàng' },
+        { status: 'SHIPPING', title: 'Đang giao hàng', desc: 'Giao hàng với shipper' },
+        { status: 'DELIVERED', title: 'Đã giao hàng', desc: 'Giao thành công' }
+      ];
+
+      const currentStatusInfo = statusMap[order.status] || statusMap['PENDING'];
+      let timelineHtml = '<div class="timeline">';
+
+      timeline.forEach((item, idx) => {
+        const isCompleted = timeline.slice(0, idx).some(t => t.status === order.status) || item.status === order.status;
+        const isActive = item.status === order.status;
+        const date = isCompleted ? new Date().toLocaleDateString('vi-VN') : '-';
+
+        timelineHtml += `
+          <div class="timeline-item ${isCompleted ? 'completed' : ''} ${isActive ? 'active' : ''}">
+            <div class="timeline-time">${date}</div>
+            <div class="timeline-title">${item.title}</div>
+            <div class="timeline-desc">${item.desc}</div>
+          </div>`;
+      });
+      timelineHtml += '</div>';
+
+      const html = `
+        <div class="tracking-container">
+          <div class="tracking-header">
+            <div>
+              <div style="font-weight:600;margin-bottom:4px">#${order.orderCode || order.orderId}</div>
+              <div class="text-xs text-muted">${new Date(order.createdAt).toLocaleDateString('vi-VN')}</div>
+            </div>
+            <span class="tracking-status" style="background:rgba(${currentStatusInfo.color.match(/\d+/g).join(',')},0.1);color:${currentStatusInfo.color}">
+              <i class="fas fa-${currentStatusInfo.icon}" style="margin-right:4px"></i>${currentStatusInfo.label}
+            </span>
+          </div>
+          ${timelineHtml}
+        </div>
+
+        <div class="tracking-container">
+          <h4 style="margin-bottom:12px"><i class="fas fa-map-marker-alt" style="color:var(--accent);margin-right:8px"></i>Thông tin giao hàng</h4>
+          <div class="tracking-detail">
+            <span class="text-muted">Địa chỉ giao</span>
+            <span class="fw-600">${order.shippingAddress || '-'}</span>
+          </div>
+          <div class="tracking-detail">
+            <span class="text-muted">Người nhận</span>
+            <span class="fw-600">${order.shippingName || '-'}</span>
+          </div>
+          <div class="tracking-detail">
+            <span class="text-muted">Số điện thoại</span>
+            <span class="fw-600">${order.shippingPhone || '-'}</span>
+          </div>
+          <div class="tracking-detail">
+            <span class="text-muted">Ngày dự kiến</span>
+            <span class="fw-600">${order.estimatedDelivery ? new Date(order.estimatedDelivery).toLocaleDateString('vi-VN') : 'Chưa xác định'}</span>
+          </div>
+          ${order.status === 'SHIPPING' ? `
+          <div class="contact-section">
+            <div style="margin-bottom:8px;font-weight:600">Liên hệ shipper</div>
+            <button class="btn btn-primary btn-sm btn-block" onclick="contactShipper()">
+              <i class="fas fa-phone"></i> Liên hệ: ${order.shipperPhone || 'N/A'}
+            </button>
+          </div>` : ''}
+        </div>
+
+        <div class="tracking-container">
+          <h4 style="margin-bottom:12px"><i class="fas fa-box" style="color:var(--accent);margin-right:8px"></i>Chi tiết đơn hàng</h4>
+          ${order.items ? order.items.map(item => `
+            <div class="tracking-detail">
+              <span>${item.productName || 'SP'} x${item.quantity}</span>
+              <span class="fw-600">${fmt(item.price * item.quantity)}</span>
+            </div>`).join('') : ''}
+          <div style="border-top:1px solid var(--border-light);margin:12px 0;padding-top:12px">
+            <div class="tracking-detail">
+              <span class="fw-600">Tổng cộng</span>
+              <span class="fw-700 text-danger" style="font-size:1.125rem">${fmt(order.totalAmount)}</span>
+            </div>
+          </div>
+        </div>
+
+        <a href="orders.html" class="btn btn-outline btn-block" style="margin:0 16px;margin-bottom:16px"><i class="fas fa-arrow-left"></i> Quay lại danh sách</a>
+      `;
+
+      document.getElementById('trackingContainer').innerHTML = html;
+    }
+
+    function contactShipper() {
+      const phone = getParam('shipperPhone') || '0989999999';
+      showToast('Hãy gọi shipper để xác nhận thời gian giao hàng', 'info');
+    }
+  </script>
+</body>
+</html>
